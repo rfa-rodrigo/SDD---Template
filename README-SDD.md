@@ -4,13 +4,17 @@ Spec-driven development em seis estágios: **pdr → spec → plan → tasks →
 
 ## Instalação
 
-Coloque `SETUP-SDD.md` na raiz do projeto e peça ao agente para executá-lo. Nada é sobrescrito.
+Antes de abrir a sessão, coloque o `CLAUDE.md` na raiz do projeto — são as diretrizes de comportamento que valem para todas as sessões. Ele é carregado na abertura, e só na abertura: arquivo posto depois não entra na sessão que já está rodando.
 
-O setup instala uma skill de terceiro, a `skill-creator`, e o faz pedindo permissão. Se a permissão for negada, o setup para ali — e para de propósito: as seis skills do fluxo não são escritas à mão, são geradas.
+Com ele no lugar, coloque o `SETUP-SDD.md` na raiz e peça ao agente para executá-lo. Nada é sobrescrito.
+
+O setup não instala nada, não pede rede e não depende de ferramenta de terceiro. Ele cria pastas e escreve arquivos, e para na primeira coisa que já existir em vez de sobrescrever.
 
 ## O que o setup entrega
 
-O `SETUP-SDD.md` não contém as skills prontas. Cada subseção de 2.2 a 2.7 traz um **prompt**, e o agente entrega esse prompt à `skill-creator`, que gera a skill. Prompt não é skill: o que define a forma do arquivo é quem sabe fazer skill, e o que define o conteúdo é o prompt.
+Uma skill é um arquivo: `.claude/skills/<nome>/SKILL.md`, com `name` e `description` no cabeçalho e as instruções no corpo. A seção 2.1 fixa esse contrato, e cada subseção de 2.2 a 2.7 traz a `description` literal e o corpo da sua skill. O agente copia — não redige, não parafraseia, não resume.
+
+A `description` é o que decide quando a skill dispara, e as seis dizem por escrito que só disparam por invocação explícita do usuário. É o portão do fluxo: skill que dispara porque o assunto surgiu começa a entrevistar, planejar ou executar sem ninguém ter pedido. Por isso o texto vem pronto, em vez de ser redigido a cada instalação.
 
 ```
 projeto/
@@ -24,7 +28,7 @@ projeto/
 │   │   └── archive/     uma pasta por feature concluída
 │   ├── templates/       pdr, spec, plan, tasks, exec
 │   └── shared/
-│       └── orientacoes.md   o que atravessa features
+│       └── memory.md      o que atravessa features
 └── resources/           a raiz do código
 ```
 
@@ -37,9 +41,9 @@ Cada estágio roda, você confere, e só então o próximo começa. Nenhum dispa
     /plan       lê o código e desenha a engenharia          → PLAN-<NNN>
     /tasks      decompõe em tarefas atômicas com checkbox   → TASKS-<NNN>
     /execute    executa, isolado, e registra o que houve    → EXEC-<NNN>
-    /archive    colhe o que sobrevive e fecha a feature
+    /archive    arquiva os artefatos e registra a memória da feature
 
-Os cinco artefatos vivem em `.spec/specs/` e carregam o mesmo `<NNN>` — o ID da feature, perguntado ao usuário no PDR e conferido contra as features ativas **e** arquivadas antes de ser aceito. O slug também se propaga: o do PDR nomeia a decisão, o da spec nomeia a funcionalidade, e é o da spec que todos os artefatos seguintes e a pasta arquivada repetem.
+Os cinco artefatos vivem em `.spec/specs/` e carregam o mesmo `<NNN>` — o ID da feature, perguntado ao usuário no PDR e conferido contra as features ativas **e** arquivadas antes de ser aceito. O slug segue o mesmo caminho: nasce no PDR e é repetido, sem alteração, por todos os artefatos seguintes e pela pasta arquivada.
 
 ## As ideias que sustentam o fluxo
 
@@ -50,6 +54,8 @@ Os cinco artefatos vivem em `.spec/specs/` e carregam o mesmo `<NNN>` — o ID d
 **A verificação nasce antes do código.** Toda etapa do plano e toda tarefa carregam o comando que prova que funcionou e o resultado que aprova. Etapa cuja verificação você não sabe nomear está grande demais ou mal definida.
 
 **Paralelismo é derivado, não desejado.** Duas tarefas só correm juntas se não houver dependência entre elas, se não escreverem no mesmo arquivo e se não usarem o mesmo recurso. Escrita no mesmo arquivo é dependência mesmo sem dependência lógica; e o que o comando de verificação escreve — lockfile, cache, `dist/`, cobertura — conta como escrita. É assim que se descobre que rodar `install` em paralelo nunca foi paralelo.
+
+Derivado, e ainda assim opcional: o arquivo de tarefas carrega um campo `Paralelismo`, que nasce `não` e só vira `sim` se você liberar em palavras. Ele governa o despacho, nunca a análise — os blocos continuam sendo montados e conferidos dos dois jeitos, porque é a montagem do bloco que prova que as dependências estão certas. Rodar em série é sempre seguro; o campo existe para que paralelizar seja escolha sua, e não padrão do agente.
 
 **Atômico não é minúsculo.** É indivisível sem perder valor: uma mudança que se verifica sozinha e caberia num commit. Oito passos que só valem juntos eram um.
 
@@ -71,7 +77,7 @@ O pesadelo do fluxo é o agente fazer o que ninguém pediu. A defesa é em quatr
 
 Um subagente com `tools: Read, Grep, Glob` que lê o artefato e o modelo, procura defeitos numa **lista fechada** e reporta por severidade. Nunca corrige, nunca julga o mérito da decisão, nunca comenta estilo, e pode — deve — responder `Nenhum defeito encontrado.`
 
-A lista fechada é o ponto. Um revisor solto, com a missão de "ver se dá para melhorar", sempre acha algo, porque melhoria é ilimitada; o retorno vira ruído genérico e por volta do terceiro uso você aprende a ignorá-lo. Cada etapa tem a sua lista, com cada defeito nomeado e os bloqueantes marcados como tais: PDR com 8 itens, SPEC com 13, PLAN com 15, TASKS com 23, EXEC com 20, ARCHIVE com 11. Etapa que não estiver na lista, ele recusa em vez de improvisar critério.
+A lista fechada é o ponto. Um revisor solto, com a missão de "ver se dá para melhorar", sempre acha algo, porque melhoria é ilimitada; o retorno vira ruído genérico e por volta do terceiro uso você aprende a ignorá-lo. Cada etapa tem a sua lista, com cada defeito nomeado e os bloqueantes marcados como tais: PDR com 8 itens, SPEC com 14, PLAN com 15, TASKS com 22, EXEC com 20, ARCHIVE com 9. Etapa que não estiver na lista, ele recusa em vez de improvisar critério.
 
 E ele serve porque é cego: quem escreveu o artefato tinha a conversa inteira no contexto, e por isso não enxerga o que falta. O revisor recebe só o arquivo — que é a condição de quem vai ler daqui a um ano.
 
@@ -83,15 +89,15 @@ Quem promove é a própria skill, **depois** de o usuário aprovar em palavras. 
 
 ## O que atravessa features
 
-`.spec/shared/orientacoes.md` é o único arquivo que não é clonado: é preenchido no lugar e cresce a cada arquivamento. Vocabulário, stack e versões fixadas, convenções, invariantes, limites e políticas, decisões permanentes, **caminhos já tentados** e armadilhas conhecidas.
+`.spec/shared/memory.md` é a memória do projeto e o único arquivo que não é clonado: é preenchido no lugar, e **por você**. Vocabulário, stack e versões fixadas, convenções, invariantes, limites e políticas, decisões permanentes, **caminhos já tentados** e armadilhas conhecidas.
 
 O PDR, a spec e o plano o leem antes de qualquer pergunta, e o que está lá não se rediscute a cada rodada — contradizê-lo é achado a reportar, não escolha a fazer. Seção com campos entre `<>` está vazia: placeholder não é convenção, não é invariante e não é decisão.
 
-No `archive`, o critério para uma entrada subir é um só: **vale para a próxima feature?** Se vale só para esta, fica na pasta arquivada. Encher o compartilhado de detalhe morto é a forma mais rápida de fazer todo mundo parar de lê-lo.
+Nenhuma skill escreve nele. O `archive` deixa o que a feature ensinou no README da pasta arquivada; o que vale para as próximas, quem promove é você. Encher a memória de detalhe morto é a forma mais rápida de fazer todo mundo parar de lê-la.
 
 ## O arquivamento
 
-O `archive` não toca em `resources/`. Ele confere o portão de fechamento — log `concluída`, todas as caixas marcadas, nenhuma contaminação em aberto —, propõe a colheita para o compartilhado, e só então **move** os artefatos para `.spec/specs/archive/<NNN>-<slug>/`, deixando `.spec/specs/` limpo para a próxima rodada. Não apaga nada.
+O `archive` não toca em `resources/` nem em `.spec/shared/`. Ele confere o portão de fechamento — log `concluída`, todas as caixas marcadas, nenhuma contaminação em aberto —, **move** tudo que está na raiz de `.spec/specs/` para `.spec/specs/archive/<NNN>-<slug>/` e escreve ali o README com a memória da feature. Não apaga nada.
 
 Feature abandonada também se arquiva, com menos artefatos do que os cinco, desde que o README da pasta registre por que foi abandonada e que estágios nunca existiram. Abandono com rastro é legítimo; abandono silencioso não.
 
@@ -107,6 +113,12 @@ Durante a execução você vai descobrir que uma etapa estava errada. Quando aco
 
 ## Estado atual
 
-O documento passou por duas rodadas de auditoria multi-agente, com lentes independentes e verificação adversarial de cada achado: 52 achados levantados e 7 defeitos reais corrigidos na primeira; 22 levantados e 1 corrigido na segunda. Convergiu.
+O documento passou por três rodadas de auditoria de leitura, com verificação adversarial de cada achado, e depois por **duas features rodadas de ponta a ponta** — uma em Python, uma em C++ —, com instalação limpa antes de cada uma.
 
-**Nada disso foi executado.** O fluxo existe como texto. Leitura pega contradição; não pega o que só aparece rodando — se a skill gerada a partir do prompt sai com a forma que o fluxo espera, se o `executor` obedece ao escopo sob pressão, se o `revisor` acha defeito de verdade ou vira ruído. Rode uma feature pequena de ponta a ponta antes de confiar.
+**O que as rodadas provaram.** O setup instala determinístico a partir do documento, sem rede. O `revisor` acha defeito real e prova executando: em onze auditorias, sete voltaram limpas e quatro trouxeram achados, todos verdadeiros — inclusive um comando de verificação que não rodava e uma spec que adotava dependência proibida pelo PDR. O `executor` obedeceu ao escopo nas quatro tarefas, com contaminação zero conferida por inventário, e a válvula produziu dezesseis achados registrados e não consertados. Portões, cadeia de status, propagação de slug e a varredura do arquivamento funcionaram.
+
+**O que continua sem teste.** O despacho paralelo nunca rodou: as duas features eram cadeias sequenciais. As skills nunca foram carregadas pelo harness como skills de verdade — foram lidas e seguidas. A retomada de rodada morta, a parada obrigatória por verificação que falha, o comando destrutivo, a instalação de dependência pelo orquestrador e o `memory.md` preenchido: nenhum desses caminhos foi exercido.
+
+**Como ler isso.** Uma checagem que nunca disparou não está provada, só não atrapalhou. E quem operou os dois testes também escreveu o documento — a segunda feature passou limpa nas três primeiras auditorias porque o operador já sabia o que o revisor procura, não porque o fluxo tenha ficado mais fácil. A sua primeira feature vai parecer mais com a primeira do teste.
+
+**Antes do primeiro caso real:** ponha `resources/` sob controle de versão, que é o único desfazer de verdade; escolha uma feature que justifique a cerimônia, porque em trabalho trivial os artefatos ficam maiores que o código; e comece com `Paralelismo: não`.

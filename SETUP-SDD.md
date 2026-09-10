@@ -11,6 +11,16 @@ Instruções para o agente. Execute na raiz do projeto atual.
 
 ---
 
+## 0. Pré-fase — conferir o `CLAUDE.md`
+
+Antes de qualquer outra coisa, verifique se existe um `CLAUDE.md` na raiz do projeto.
+
+Se existir, siga para a seção 1.
+
+Se não existir, pare e informe o usuário: o `CLAUDE.md` carrega as diretrizes de comportamento e é lido na abertura da sessão, e só nela — colocá-lo agora não tem efeito sobre esta sessão, seria preciso encerrar e reabrir. Pergunte se ele prefere parar o setup para colocar o arquivo e reabrir a sessão, ou continuar mesmo assim. Espere a resposta: não escolha por ele e não trate silêncio como resposta.
+
+---
+
 ## 1. Estrutura de pastas e Fluxo
 
 Crie as pastas abaixo, se ainda não existirem. Não crie nenhum arquivo ainda — isso vem nas seções seguintes.
@@ -28,6 +38,8 @@ projeto/
 └── resources/
 ```
 
+`.spec/specs/` guarda **uma feature por vez**. Concluída, ela é arquivada e a raiz volta a ficar vazia. Duas features abertas ali é erro, não paralelismo.
+
 `resources/` é a raiz do código, é onde as informações externas serão armazenadas.
 
 Não crie pasta que ninguém use — toda pasta acima tem dono declarado neste documento.
@@ -40,25 +52,40 @@ Não crie pasta que ninguém use — toda pasta acima tem dono declarado neste d
 
 ## 2. Skills
 
-A 2.1 instala skills de terceiros. As demais serão criadas seguindo o seguinte fluxo: /skill-creator + prompt
+As seis skills do fluxo são escritas por você, aqui, a partir dos blocos das subseções 2.2 a 2.7. Não instale nada e não dependa de nenhuma ferramenta de terceiro: uma skill é um arquivo, e a 2.1 diz exatamente qual.
 
-### 2.1 Skills básicas
+### 2.1 O contrato do arquivo de skill
 
-Peça permissão antes de instalar qualquer coisa e não prossiga sem resposta afirmativa.
+Cada uma das seis skills é um único arquivo, em `.claude/skills/<nome>/SKILL.md`, com esta forma:
 
-- skill-creator — `npx -y skills add anthropics/skills --skill skill-creator --agent claude-code`
-
-Se a permissão for negada, ou a instalação falhar, **pare o setup aqui** e registre a dependência insatisfeita. As seções 2.2 a 2.7 criam as skills do fluxo entregando prompts à `skill-creator`; sem ela, não há como executá-las. Não escreva as skills à mão a partir dos prompts: prompt não é skill, e o que sairia daí não tem a forma que o fluxo espera.
-
+```
 ---
+name: <nome>
+description: <o texto literal dado na subseção da skill>
+---
+
+<o bloco da subseção, copiado literalmente>
+```
+
+Três regras, e nenhuma delas é opcional:
+
+1. O `name` é o nome da skill, igual ao da pasta: `pdr`, `spec`, `plan`, `tasks`, `execute`, `archive`.
+2. A `description` é o texto literal que cada subseção fornece. Não redija a sua. É a `description` que decide quando a skill dispara, e todas as seis dizem a mesma coisa por escrito: só por invocação explícita do usuário. Esse é o portão do fluxo — uma skill que dispara porque o assunto surgiu na conversa começa a entrevistar, planejar ou executar sem ninguém ter pedido.
+3. O corpo é o bloco da subseção, copiado literalmente, pela regra de execução 1 deste documento. Não parafraseie, não resuma, não reorganize.
+
+Se você conhece alguma ferramenta de criação de skills, não a use aqui. Elas costumam orientar descrições agressivas, para a skill disparar sempre que puder — o oposto exato do que estas seis precisam.
 
 ### 2.2 Skill do PDR
 
-Primeira etapa do fluxo. Invoque a `skill-creator` e entregue a ela o prompt abaixo.
+Primeira etapa do fluxo. Crie `.claude/skills/pdr/SKILL.md` conforme o contrato da 2.1, com esta `description`:
 
 ```
-Crie uma skill chamada `pdr`.
+Conduz a entrevista de decisão de produto e escreve o Product Decision Record (PDR) da feature em `.spec/specs/`. Use SOMENTE quando o usuário invocar esta skill explicitamente. Nunca dispare porque uma decisão de produto surgiu na conversa, porque o usuário mencionou que precisa decidir algo, ou porque parece útil: o portão é o usuário invocar o comando.
+```
 
+E com o bloco abaixo como corpo, copiado literalmente:
+
+```
 **O que ela faz.** Conduz uma conversa com o usuário e, no fim, escreve um Product Decision Record — o registro da decisão de produto que está sendo tomada. Ela não escreve código, não altera nada em `resources/`, e não produz nenhum artefato além do PDR.
 
 **Quando dispara.** Só quando o usuário a invoca explicitamente. A `description` deve dizer isso com todas as letras, para o modelo não começar a entrevistar ninguém porque o assunto surgiu na conversa.
@@ -67,7 +94,7 @@ Crie uma skill chamada `pdr`.
 
 - Uma pergunta por mensagem. Nunca empilhe perguntas.
 - Prefira alternativas fechadas quando o assunto permitir; pergunta aberta quando não permitir.
-- Antes da primeira pergunta, leia o estado do projeto: `.spec/shared/`, os PDRs já existentes em `.spec/specs/` e o que houver em `resources/`. Não pergunte o que o repositório já responde.
+- Antes da primeira pergunta, leia o estado do projeto em `.spec/shared/` e o que houver em `resources/`. Não pergunte o que o repositório já responde.
 - Leia `.spec/shared/` antes de qualquer outra coisa. O que está ali vale para todas as features — vocabulário, convenções, invariantes, limites, versões fixadas, caminhos já tentados e armadilhas conhecidas — e não se rediscute a cada rodada. Contradizer o que está lá é achado a reportar, não escolha a fazer.
 - Investigue nesta ordem: que problema motiva a decisão, quem sente esse problema, o que já foi tentado, que restrições existem (prazo, técnica, gente, dinheiro), o que está fora de escopo, e como se saberá que a decisão foi acertada.
 - Não trate resposta vaga como resposta. Se o usuário disser "precisa ser rápido", pergunte rápido em relação a quê e medido como.
@@ -82,7 +109,7 @@ Não escreva o PDR antes da aprovação. Apresente na conversa, em texto, o que 
 
 **A escrita.**
 
-Recebido o sim: copie `.spec/templates/pdr.md` para `.spec/specs/PDR-<NNN>-<slug>.md` e preencha a cópia. `<NNN>` é o ID da feature, sempre pergunte ao usuário. Antes de aceitar o número, liste `.spec/specs/` **e** `.spec/specs/archive/`: número de feature não se reaproveita, e a pasta de specs fica vazia depois de cada arquivamento — quem só olha ali não enxerga nenhuma feature já fechada. Se o número pedido aparecer em qualquer um dos dois, recuse e proponha o próximo livre. `<slug>` é a decisão em três a cinco palavras, minúsculas, separadas por hífen. O modelo em `.spec/templates/` nunca é editado.
+Recebido o sim: copie `.spec/templates/pdr.md` para `.spec/specs/PDR-<NNN>-<slug>.md` e preencha a cópia. `<NNN>` é o ID da feature, sempre pergunte ao usuário. Antes de aceitar o número, liste `.spec/specs/` **e** `.spec/specs/archive/`: número de feature não se reaproveita, e a pasta de specs fica vazia depois de cada arquivamento — quem só olha ali não enxerga nenhuma feature já fechada. Se o número pedido aparecer em qualquer um dos dois, recuse e proponha o próximo livre. `<slug>` é a feature em três a cinco palavras, minúsculas, separadas por hífen. É ele que todos os artefatos seguintes e a pasta arquivada repetem, sem alteração — escolha pensando em quem vai procurar a feature depois. O modelo em `.spec/templates/` nunca é editado.
 
 Preencha todos os campos do modelo. Campo que você não consegue preencher é pergunta que faltou fazer: volte e pergunte, não escreva "a definir".
 
@@ -111,11 +138,15 @@ O PDR nasce `proposto` e é a spec que exige `aceito`. Quem promove é você, e 
 
 ### 2.3 Skill das especificações
 
-Segunda etapa do fluxo. Invoque a `skill-creator` e entregue a ela o prompt abaixo.
+Segunda etapa do fluxo. Crie `.claude/skills/spec/SKILL.md` conforme o contrato da 2.1, com esta `description`:
 
 ```
-Crie uma skill chamada `spec`.
+Produz a especificação técnica (SPEC) de uma feature a partir de um PDR com Status aceito, pesquisando a internet e provando viabilidade antes de propor. Use SOMENTE quando o usuário invocar esta skill explicitamente, passando o ID da feature. Nunca dispare por conta própria depois de um PDR aprovado.
+```
 
+E com o bloco abaixo como corpo, copiado literalmente:
+
+```
 **O que ela faz.** Parte de um PDR aprovado e produz a especificação técnica da funcionalidade: entradas, saídas, comportamento esperado e critérios de aceitação objetivos. O PDR decidiu o quê e por quê; a spec fixa o como, com rigor suficiente para que quem for implementar não precise decidir nada sozinho. Ela não escreve código e não altera `resources/`.
 
 **Quando dispara.** Só quando o usuário a invoca explicitamente, passando o número do PDR de origem. A `description` deve dizer isso.
@@ -137,6 +168,7 @@ Regras da pesquisa:
 - Confira data e versão. Biblioteca abandonada, API removida e tutorial de cinco anos atrás são armadilhas comuns aqui: registre a versão que você conferiu e a data em que conferiu.
 - Confira a licença de tudo que virar dependência.
 - Confira compatibilidade com o que já está em `resources/` — versão de linguagem, runtime, dependências que já existem e podem conflitar.
+- Verifique se a solução já é consolidada ou se ainda é incerta.
 - Registre o que encontrou. Toda fonte que sustentou uma escolha entra na seção Referências da spec, com o que foi tirado dela e a data de consulta. Fonte que você leu e descartou também vale registrar quando o descarte foi informativo.
 
 **A prova de viabilidade.**
@@ -162,7 +194,7 @@ Não escreva a spec antes da aprovação. Apresente na conversa a abordagem reco
 
 **A escrita.**
 
-Recebido o sim: copie `.spec/templates/spec.md` para `.spec/specs/SPEC-<NNN>-<slug>.md` e preencha a cópia. `<NNN>` é o ID da feature — o mesmo do PDR de origem, sem número novo: é ele que amarra os artefatos da feature. `<slug>` é a funcionalidade em três a cinco palavras, minúsculas, separadas por hífen. O cabeçalho aponta o PDR de origem.
+Recebido o sim: copie `.spec/templates/spec.md` para `.spec/specs/SPEC-<NNN>-<slug>.md` e preencha a cópia. Tanto o `<NNN>` quanto o `<slug>` encontram-se no PDR, se precisar, leia-o — o slug não se reescreve aqui.
 
 **Régua do conteúdo.**
 
@@ -190,11 +222,15 @@ A spec nasce `rascunho` e o plano exige `aprovada`. Depois de o usuário aprovar
 
 ### 2.4 Skill do planejamento
 
-Terceira etapa do fluxo. Invoque a `skill-creator` e entregue a ela o prompt abaixo.
+Terceira etapa do fluxo. Crie `.claude/skills/plan/SKILL.md` conforme o contrato da 2.1, com esta `description`:
 
 ```
-Crie uma skill chamada `plan`.
+Cruza uma SPEC aprovada com o código em `resources/` e escreve o plano de engenharia (PLAN): mapa de arquivos, dependências, efeitos colaterais, etapas, ondas e caminho crítico. Use SOMENTE quando o usuário invocar esta skill explicitamente, passando o ID da feature. Nunca dispare por conta própria depois de uma spec aprovada.
+```
 
+E com o bloco abaixo como corpo, copiado literalmente:
+
+```
 **O que ela faz.** Cruza uma spec aprovada com o código que existe em `resources/` e produz a estratégia de engenharia: que arquivos serão criados, alterados ou removidos; que dependências serão instaladas; que efeitos colaterais a mudança provoca na arquitetura; e quais etapas precisam ser feitas, em que ordem, quais dependem de quais e quais podem correr juntas. Ela não escreve código e não altera `resources/`.
 
 **Quando dispara.** Só quando o usuário a invoca explicitamente, passando o ID da feature. A `description` deve dizer isso.
@@ -226,14 +262,17 @@ O motivo de perguntar em vez de adivinhar é econômico: erro de sequenciamento 
 
 - Cada etapa é uma unidade com começo e fim observáveis e uma verificação própria — o comando ou a observação que prova que ela funcionou, com o resultado que a aprova.
 - Etapa cuja verificação você não sabe nomear está grande demais ou mal definida. Quebre.
+- A verificação exercita o que a etapa entrega, não só o arquivo existir ou compilar. Etapa que cria lógica e verifica só sintaxe tem verificação que não verifica: o defeito aparece na etapa seguinte, ou nunca.
 - Etapa entrega uma coisa. "E" ligando dois trabalhos que se verificam separadamente são duas etapas.
-- Cada etapa declara: o que faz, os arquivos exatos, a verificação, de que etapas depende, com quais pode correr em paralelo, que critérios da spec atende, e como se desfaz.
+- Cada etapa declara: o que faz, os arquivos exatos, os recursos que usa — banco, porta, serviço, variável de ambiente —, a verificação, de que etapas depende, com quais pode correr em paralelo, que critérios da spec atende, e como se desfaz.
 - Ordem lógica significa que nada depende do que ainda não existe. Percorra o grafo e confirme: para toda etapa, tudo de que ela precisa foi produzido antes.
 - O grafo não tem ciclo. Duas etapas que dependem uma da outra são um recorte errado — refaça o recorte, não invente uma ordem.
 
 **Paralelismo.**
 
-Paralelismo se deriva das dependências, não do desejo. Duas etapas correm juntas quando nenhuma depende da outra e nenhuma escreve no arquivo em que a outra escreve. Escrita no mesmo arquivo é dependência, mesmo quando não há dependência lógica.
+Paralelismo se deriva das dependências, não do desejo. Duas etapas correm juntas quando nenhuma depende da outra, nenhuma escreve no arquivo em que a outra escreve, e nenhuma usa o recurso que a outra usa — banco, porta, serviço em execução, variável de ambiente, diretório temporário fixo. Escrita no mesmo arquivo é dependência, mesmo quando não há dependência lógica. E o que o comando de verificação escreve — lockfile, cache, `dist/`, cobertura — conta como escrita da etapa: é assim que se descobre que rodar `install` em paralelo nunca foi paralelo.
+
+Esse é o mesmo critério que define um bloco de tarefas. Onda frouxa aqui vira bloco errado lá, e bloco errado quebra a execução.
 
 Agrupe as etapas em ondas: a onda 1 são as etapas sem dependência; a onda N são as etapas cujas dependências foram todas satisfeitas até a onda anterior. Dentro de uma onda, tudo corre junto.
 
@@ -253,7 +292,7 @@ Antes de escrever o arquivo, apresente na conversa só a lista de etapas com sua
 
 **A escrita.**
 
-Recebido o sim: copie `.spec/templates/plan.md` para `.spec/specs/PLAN-<NNN>-<slug>.md` e preencha a cópia. `<NNN>` é o ID da feature, o mesmo da spec de origem. `<slug>` acompanha o da spec.
+Recebido o sim: copie `.spec/templates/plan.md` para `.spec/specs/PLAN-<NNN>-<slug>.md` e preencha a cópia. Tanto o `<NNN>` quanto o `<slug>` encontram-se no PDR, se precisar, leia-o.
 
 **Antes de entregar.**
 
@@ -272,24 +311,32 @@ O plano nasce `rascunho` e as tarefas exigem `aprovado`. Depois de o usuário ap
 
 ### 2.5 Skill das tarefas
 
-Quarta etapa do fluxo. Invoque a `skill-creator` e entregue a ela o prompt abaixo.
+Quarta etapa do fluxo. Crie `.claude/skills/tasks/SKILL.md` conforme o contrato da 2.1, com esta `description`:
 
 ```
-Crie uma skill chamada `tasks`.
+Traduz um PLAN aprovado numa lista de tarefas atômicas com checkbox (TASKS), cada uma isolada e executável por um agente que não viu mais nada. Use SOMENTE quando o usuário invocar esta skill explicitamente, passando o ID da feature. Nunca dispare por conta própria depois de um plano aprovado.
+```
 
+E com o bloco abaixo como corpo, copiado literalmente:
+
+```
 **O que ela faz.** Traduz um plano aprovado numa lista cirúrgica de tarefas atômicas, encadeadas e marcáveis. Cada tarefa é uma instrução isolada de execução: quem for executá-la recebe aquele bloco e nada mais. Ela não escreve código e não altera `resources/`.
 
-**Não gere uma skill por tarefa.** A entrada da tarefa já é o prompt do executor; uma skill em cima dela seria uma segunda descrição do mesmo trabalho, que diverge com o tempo e polui `.claude/skills/` com arquivos de uso único disputando atenção com os permanentes. O isolamento vem do subagente, não do arquivo. Skill só se justifica para procedimento que se repete entre tarefas e entre features — e essa é permanente, escrita uma vez, referenciada pelas tarefas.
+**Não gere uma skill por tarefa.** A entrada da tarefa já é o prompt do executor; uma skill em cima dela seria uma segunda descrição do mesmo trabalho, que diverge com o tempo e polui `.claude/skills/` com arquivos de uso único disputando atenção com os permanentes. O isolamento vem do subagente, não do arquivo. Skill só se justifica para procedimento que se repete entre tarefas e entre features — e essa é permanente, escrita uma vez, referenciada pelas tarefas. Caso seja necessária a criação de uma skill, coloque isso como tarefa, seguindo o contrato da 2.1.
 
 **Quando dispara.** Só quando o usuário a invoca explicitamente, passando o ID da feature. A `description` deve dizer isso.
 
 **Entrada.**
 
-Leia o plano da feature em `.spec/specs/`. Se ele não estiver com `Status: aprovado`, pare e diga por quê. Leia a spec, para os critérios de aceitação, e o código em `resources/`, para os caminhos exatos — a tarefa cita caminho que existe, não caminho que deveria existir.
+Leia o plano da feature em `.spec/specs/`. Se ele não estiver com `Status: aprovado`, pare e diga por quê. Leia a spec, para os critérios de aceitação, e o código em `resources/`, para os caminhos exatos — a tarefa cita caminho que existe, não caminho que deveria existir. Leia também o PDR da feature: é dele que vêm o `<NNN>` e o `<slug>`.
 
 **A tradução.**
 
 Cada etapa do plano vira uma ou mais tarefas, e nenhuma tarefa nasce fora do plano. Se algo necessário não está lá, o plano é que está incompleto: pare e diga, não conserte por conta própria. A ordem das tarefas respeita o grafo do plano, e as ondas do plano viram blocos de tarefas.
+
+Um bloco é o conjunto de tarefas que podem correr ao mesmo tempo. É essa a propriedade que o define — não o tema, não o tamanho.
+
+Uma onda do plano pode virar mais de um bloco: se as tarefas dela colidem em arquivo ou em recurso, quebre a onda em quantos blocos forem necessários até a propriedade valer. Bloco a mais custa tempo; bloco errado quebra a execução.
 
 **O tamanho.**
 
@@ -312,19 +359,16 @@ Escreva cada tarefa para um executor que não viu o PDR, não viu a spec, não v
 
 Quem executa não vai reconstruir o grafo: vai ler o que você declarou e conferir. Então declare de forma redundante e literal, para que erro apareça como contradição em vez de passar batido.
 
-Cada tarefa declara de que tarefas depende, com quais pode correr em paralelo, a pré-condição observável que precisa valer antes de começar e a pós-condição que passa a valer depois. Numeração contínua `T1`, `T2`, ... , sem buraco e sem reaproveitamento.
+Cada tarefa declara de que tarefas depende e com quais pode correr em paralelo. Numeração contínua `T1`, `T2`, ... , sem buraco e sem reaproveitamento.
 
-Sete regras fecham a corrente:
+Seis regras fecham a corrente:
 
 - **"Arquivos" lista só o que a tarefa escreve.** Arquivo que ela apenas lê fica no "O que fazer". É por essa lista que a execução detecta colisão entre tarefas paralelas — poluí-la com leitura cega a checagem.
 - **"Depende de" e "Paralelizável com" não se cruzam.** Nenhuma tarefa aparece nos dois campos da mesma tarefa, e os dois campos concordam com o bloco. A redundância é proposital: é ela que torna o erro visível.
-- **A pré-condição é copiada, não reescrita.** Ou é o estado inicial do repositório, ou é a pós-condição de uma das tarefas em "Depende de", palavra por palavra. Quem executa compara os dois textos; sinônimo quebra a comparação.
 - **Tarefas no mesmo bloco não se cruzam nem se sobrepõem.** Só entram juntas tarefas sem dependência entre si, direta ou por cadeia, e sem nenhum arquivo em comum em "Arquivos".
-- **Caminho é arquivo, nunca pasta nem padrão.** "Arquivos" lista caminhos de arquivo, um a um. Pasta, curinga ou "todos os arquivos de" cegam a comparação: duas tarefas parecem disjuntas e escrevem no mesmo lugar. Tarefa que precisa escrever numa pasta inteira lista os arquivos, ou não é paralelizável com ninguém.
+- **Caminho é arquivo, nunca pasta nem padrão.** "Arquivos" lista caminhos de arquivo, um a um. Pasta, curinga ou "todos os arquivos de" cegam a comparação: duas tarefas parecem disjuntas e escrevem no mesmo lugar. Tarefa que precisa escrever ou remover uma pasta inteira lista os arquivos, ou não é paralelizável com ninguém.
 - **A verificação também escreve.** Comando de teste, build, instalação, formatação ou geração de código quase sempre escreve fora dos arquivos da tarefa: lockfile, cache, `dist/`, cobertura, `__pycache__`, migração. Levante o que o comando escreve e inclua em "Arquivos" como qualquer outra escrita. Duas tarefas cujas verificações escrevem no mesmo lugar não vão para o mesmo bloco — e é assim que se descobre que rodar `install` em paralelo nunca foi paralelo.
 - **Recurso que não é arquivo colide igual.** Banco de dados, porta, serviço em execução, variável de ambiente, credencial de uso exclusivo, diretório temporário fixo. Declare no campo "Recursos". Duas tarefas que usam o mesmo recurso não correm juntas, mesmo sem compartilhar um único caminho.
-
-Antes de fechar um bloco, faça a checagem cruzada que revela dependência escondida: a pré-condição de cada tarefa do bloco não pode ser a pós-condição de nenhuma outra tarefa do mesmo bloco. Se for, existe dependência real que o campo "Depende de" não declarou — separe as duas em blocos diferentes.
 
 Feche o arquivo com o Mapa de execução: uma linha por bloco, com as tarefas do bloco, de que bloco ele depende, todos os arquivos escritos ali e todos os recursos usados. Arquivo repetido em duas tarefas do mesmo bloco é erro de recorte, não detalhe. É esse mapa que a execução usa para conferir o paralelismo antes de despachar qualquer coisa.
 
@@ -342,13 +386,17 @@ Esta etapa não entrevista. Mas na dúvida, pergunte antes de escrever. Conta co
 
 Antes de escrever o arquivo, apresente só a lista numerada dos títulos das tarefas, com as dependências e os blocos, e espere um sim. O que precisa ser conferido é o recorte.
 
+No mesmo momento, pergunte como ele quer executar: em série, uma tarefa por vez, ou em paralelo dentro dos blocos. Pergunte sempre, mesmo quando o paralelismo for óbvio, e nunca trate silêncio como liberação — sem um sim explícito, o campo fica em `não`.
+
 **A escrita.**
 
-Recebido o sim: copie `.spec/templates/tasks.md` para `.spec/specs/TASKS-<NNN>-<slug>.md` e preencha a cópia. `<NNN>` é o ID da feature e `<slug>` é o slug, os dois iguais aos do plano de origem. Entregue todas as caixas desmarcadas.
+Recebido o sim: copie `.spec/templates/tasks.md` para `.spec/specs/TASKS-<NNN>-<slug>.md` e preencha a cópia. Tanto o `<NNN>` quanto o `<slug>` encontram-se no PDR, se precisar, leia-o. Preencha o campo `Paralelismo` com a resposta do usuário — `não` se ele não liberou em palavras. Entregue todas as caixas desmarcadas.
 
 **Antes de entregar.**
 
 Releia procurando: tarefa que deixa decisão para o executor; caminho inexato; comando que não dá para copiar e rodar; verificação sem resultado esperado; dependência apontando para tarefa de número maior; etapa do plano que ficou sem tarefa; caixa já marcada. Corrija na hora.
+
+Depois percorra bloco a bloco e confira as três, uma de cada vez: nenhuma tarefa do bloco aparece no "Depende de" de outra do mesmo bloco, direta ou por cadeia; nenhum arquivo aparece em duas tarefas do bloco; nenhum recurso aparece em duas. Falhando qualquer uma, quebre o bloco antes de entregar — é a última vez que isso sai barato.
 
 **A revisão.**
 
@@ -363,39 +411,40 @@ O arquivo de tarefas nasce `rascunho` e a execução exige `aprovado`. Depois de
 
 ### 2.6 Skill da execução
 
-Quinta etapa do fluxo. Invoque a `skill-creator` e entregue a ela o prompt abaixo.
+Quinta etapa do fluxo. Crie `.claude/skills/execute/SKILL.md` conforme o contrato da 2.1, com esta `description`:
 
 ```
-Crie uma skill chamada `execute`.
+Executa a lista de tarefas de uma feature despachando um subagente executor por tarefa, confere contaminação por inventário e escreve o log EXEC. Esta skill escreve código em `resources/`. Use SOMENTE quando o usuário invocar esta skill explicitamente, passando o ID da feature. Nunca dispare porque o assunto surgiu, porque as tarefas foram aprovadas, ou porque o usuário comentou que quer executar.
+```
 
+E com o bloco abaixo como corpo, copiado literalmente:
+
+```
 **O que ela faz.** Executa a lista de tarefas de uma feature, respeitando os blocos e o paralelismo declarados, e escreve o log da execução. É a única etapa do fluxo que altera `resources/`.
 
 **Quando dispara.** Só quando o usuário a invoca explicitamente, passando o ID da feature. Nunca porque o assunto surgiu na conversa, nunca porque o usuário comentou que quer executar. A `description` precisa dizer isso com todas as letras: esta skill escreve código, e o portão é o usuário digitar o comando.
 
 **Entrada.**
 
-Leia o arquivo de tarefas da feature em `.spec/specs/`. Se ele não estiver com `Status: aprovado`, pare e diga por quê. Tarefas já marcadas com `- [x]` não são reexecutadas.
+Leia o arquivo de tarefas da feature em `.spec/specs/`. Se ele não estiver com `Status: aprovado`, pare e diga por quê. Tarefas já marcadas com `- [x]` não são reexecutadas. Leia também o PDR da feature: é dele que vêm o `<NNN>` e o `<slug>` que nomeiam o log e o arquivo de inventário.
 
 Recuse-se a começar se já houver rodada em curso para esta feature — arquivo de tarefas com `Status: em execução`, ou log `EXEC` da feature com `Status: em execução`. Dois orquestradores na mesma feature marcam o mesmo arquivo e escrevem o mesmo log; o segundo corrompe o trabalho do primeiro. Marque `em execução` ao começar e devolva o status ao terminar ou ao interromper. A exceção é a rodada morta, tratada em Retomada.
 
-Antes de tocar em qualquer coisa, registre o inventário de `resources/`: todo caminho de arquivo com seu tamanho e data de modificação. Salve a saída em `.spec/specs/EXEC-<NNN>-<slug>.inventario.txt` e anote o caminho na seção Inventário inicial do log — o log guarda o ponteiro, o arquivo guarda a prova. É esse inventário que prova o que mudou.
+Antes de tocar em qualquer coisa, registre o inventário de `resources/`: todo caminho de arquivo com seu tamanho e data de modificação. Salve a saída em `.spec/specs/EXEC-<NNN>-<slug>.inventario-r<N>.txt`, onde `<N>` é o número da rodada, e anote o caminho na seção Inventário inicial do log — uma linha por rodada. O log guarda o ponteiro, o arquivo guarda a prova. É esse inventário que prova o que mudou — dentro de `resources/`, e só. Escrita fora dali, em diretório temporário, banco ou serviço, não aparece em nenhuma conferência de contaminação: o que a registra é a declaração de `Recursos` da tarefa e o relatório do executor. Saber o que a prova não cobre é parte de confiar nela.
 
 **A orquestração.**
 
-Execute bloco a bloco, na ordem. Dentro de um bloco, as tarefas correm em paralelo, uma por subagente. Espere o bloco inteiro terminar antes de abrir o próximo — bloco seguinte não começa com o anterior incompleto.
-
-**O paralelismo, conferido por você.**
+Execute bloco a bloco, na ordem. Leia o campo `Paralelismo` no cabeçalho do arquivo de tarefas: em `sim`, as tarefas de um bloco correm em paralelo, uma por subagente; em `não`, despache uma por vez, na ordem, mesmo onde o bloco permitiria. Campo ausente ou ilegível vale como `não`. Espere o bloco inteiro terminar antes de abrir o próximo — bloco seguinte não começa com o anterior incompleto.
 
 Duas tarefas com dependência entre si nunca vão para agentes diferentes ao mesmo tempo. Nunca. Não confie no bloco: antes de despachar, confira você mesmo, tarefa a tarefa do bloco, que nenhuma delas aparece no "Depende de" de outra do mesmo bloco, direta ou por cadeia, e que duas não escrevem no mesmo arquivo.
 
-Confira quatro coisas em cada bloco, antes de despachar:
+Confira três coisas em cada bloco, antes de despachar — inclusive com `Paralelismo: não`, porque elas provam que o recorte está certo, e o que elas acham é defeito do arquivo de tarefas:
 
 1. **Dependência.** Nenhuma tarefa do bloco aparece no "Depende de" de outra do mesmo bloco, direta ou por cadeia.
-2. **Dependência escondida.** A pré-condição de nenhuma tarefa do bloco é a pós-condição de outra tarefa do mesmo bloco. Se for, existe dependência que o campo não declarou — vale mais que o campo.
-3. **Arquivos.** Nenhum caminho aparece em "Arquivos" de duas tarefas do bloco. Caminho que for pasta ou curinga não dá para comparar: trate a tarefa como não paralelizável.
-4. **Recursos.** Nenhum recurso — banco, porta, serviço, variável de ambiente — aparece em duas tarefas do bloco.
+2. **Arquivos.** Nenhum caminho aparece em "Arquivos" de duas tarefas do bloco. Caminho que for pasta ou curinga não dá para comparar: trate a tarefa como não paralelizável.
+3. **Recursos.** Nenhum recurso — banco, porta, serviço, variável de ambiente — aparece em duas tarefas do bloco.
 
-Se qualquer uma das quatro falhar, não paralelize: execute aquelas tarefas em série, na ordem da dependência, registre o desvio no log e avise o usuário — o bloco está errado no arquivo de tarefas, e isso é defeito a corrigir lá.
+Se qualquer uma das três falhar, não paralelize: execute aquelas tarefas em série, na ordem da dependência, registre o desvio no log e avise o usuário — o bloco está errado no arquivo de tarefas, e isso é defeito a corrigir lá.
 
 Uma tarefa só é despachada quando todas as tarefas de que ela depende já estão marcadas concluídas e suas verificações passaram. Dependência pendente segura a tarefa, mesmo que o bloco diga que ela pode correr.
 
@@ -453,11 +502,11 @@ Você vai encontrar coisa errada que não é da sua tarefa: código quebrado ao 
 
 **O log.**
 
-Copie `.spec/templates/exec.md` para `.spec/specs/EXEC-<NNN>-<slug>.md` no começo da rodada e preencha à medida que executa, não no fim — se a rodada for interrompida, o que já foi escrito precisa valer. `<NNN>` é o ID da feature e `<slug>` é o slug, os dois iguais aos do arquivo de tarefas — o mesmo par nomeia o arquivo de inventário.
+Copie `.spec/templates/exec.md` para `.spec/specs/EXEC-<NNN>-<slug>.md` no começo da rodada e preencha à medida que executa, não no fim — se a rodada for interrompida, o que já foi escrito precisa valer. Tanto o `<NNN>` quanto o `<slug>` encontram-se no PDR, se precisar, leia-o.
 
 Preencha à medida que executa, e não só o resultado: o inventário inicial na seção própria, uma linha na Conferência por bloco ao fechar cada bloco, e uma linha em Confirmações destrutivas a cada confirmação que você pedir. São esses três registros que tornam a rodada auditável depois — sem eles o `revisor` não tem como conferir o que você diz ter feito.
 
-**Retomada.** Se já existe log da feature com `Status: interrompida`, não crie outro nem sobrescreva aquele: reabra o mesmo arquivo, acrescente uma linha na tabela de Rodadas, marque `em execução` e continue de onde parou, pulando as tarefas já marcadas. Rastro de rodada anterior não se apaga.
+**Retomada.** Se já existe log da feature com `Status: interrompida`, não crie outro nem sobrescreva aquele: reabra o mesmo arquivo, acrescente uma linha na tabela de Rodadas, marque `em execução` e continue de onde parou, pulando as tarefas já marcadas. Rastro de rodada anterior não se apaga. Levante o inventário de `resources/` de novo, como base desta rodada, e salve-o com o número da rodada no nome; o da rodada anterior fica onde está.
 
 Log com `Status: em execução` e nenhuma rodada viva é rodada **morta**, não rodada em curso — a sessão acabou antes do fechamento. Não confunda com concorrência, e não destrave sozinho: mostre ao usuário o log e a última linha da tabela de Rodadas, peça confirmação explícita de que nada está em curso, e só com o sim feche aquela linha como `interrompida`, ponha o `Status` do log em `interrompida` e siga a retomada acima. Se o arquivo de tarefas também estiver em `em execução`, devolva-o a `aprovado` antes de começar. Sem o sim, não comece.
 
@@ -476,20 +525,26 @@ Só então informe ao usuário: quantas tarefas concluíram, onde parou e por qu
 
 ### 2.7 Skill do arquivamento
 
-Sexta e última etapa do fluxo. Invoque a `skill-creator` e entregue a ela o prompt abaixo.
+Sexta e última etapa do fluxo. Crie `.claude/skills/archive/SKILL.md` conforme o contrato da 2.1, com esta `description`:
 
 ```
-Crie uma skill chamada `archive`.
+Fecha uma feature: move tudo que está na raiz de `.spec/specs/` para `.spec/specs/archive/<NNN>-<slug>/` e escreve ali o README com a memória da feature. Esta skill move arquivos. Use SOMENTE quando o usuário invocar esta skill explicitamente, passando o ID da feature. Nunca dispare porque a execução terminou ou porque o usuário comentou que a feature acabou.
+```
 
-**O que ela faz.** Fecha uma feature: colhe o que sobrevive dela para `.spec/shared/` e move os artefatos de `.spec/specs/` para uma pasta própria dentro de `.spec/specs/archive/`, deixando `.spec/specs/` limpo para a próxima rodada.
+E com o bloco abaixo como corpo, copiado literalmente:
+
+```
+**O que ela faz.** Fecha uma feature: move os artefatos de `.spec/specs/` para uma pasta própria dentro de `.spec/specs/archive/`, deixando `.spec/specs/` limpo para a próxima rodada, e escreve ali o registro do que a feature foi e do que ela ensinou.
 
 **Quando dispara.** Só quando o usuário a invoca explicitamente, passando o ID da feature. Esta skill move arquivos: nunca dispare porque o assunto surgiu, porque a execução terminou ou porque o usuário comentou que a feature acabou. A `description` precisa dizer isso.
 
 **Não toque em `resources/`.** Nem para ler o resultado, nem para limpar nada. O código já foi entregue pela execução; aqui se mexe apenas em `.spec/`.
 
+**Não escreva em `.spec/shared/`.** A memória do projeto é do usuário; o arquivamento não promove nada para lá. O que a feature ensinou fica no README da pasta arquivada, e quem decide o que vira regra do projeto é ele, quando quiser.
+
 **Entrada.**
 
-Localize os artefatos da feature em `.spec/specs/`: o PDR, a spec, o plano, o arquivo de tarefas e o log de execução.
+Localize tudo que está na raiz de `.spec/specs/`. Há uma feature por vez: tudo que está ali é dela. Leia o PDR: é dele que vêm o `<NNN>` e o `<slug>` que nomeiam a pasta de destino.
 
 **O portão de fechamento.**
 
@@ -503,37 +558,24 @@ Falhando alguma, diga exatamente o que falta e pare. Arquivar feature incompleta
 
 A exceção é a feature abandonada: se o usuário mandar arquivar mesmo assim, arquive, mas registre no README da pasta arquivada por que foi abandonada e em que ponto parou. Abandono com rastro é legítimo; abandono silencioso não.
 
-**A colheita.**
-
-Antes de mover qualquer coisa, leia os cinco artefatos e proponha o que merece sobreviver em `.spec/shared/`:
-
-- do PDR, alternativa descartada cujo motivo vale para o projeto inteiro, não só para aquela decisão;
-- da spec, restrição técnica confirmada na pesquisa — versão, licença, limite de serviço — que vai valer na próxima feature também;
-- do plano, efeito colateral estrutural que qualquer mudança futura naquela área vai encontrar de novo;
-- do log, os Achados não consertados e os desvios que revelaram algo sobre o projeto, não sobre a feature.
-
-O critério é um só: **vale para a próxima feature?** Se vale só para esta, fica na pasta arquivada e não sobe para `.spec/shared/`. Encher o compartilhado de detalhe morto é a forma mais rápida de fazer todo mundo parar de lê-lo.
-
-Proponha as entradas ao usuário, com a seção de destino de cada uma, e espere o sim. Só então escreva em `.spec/shared/`. Nunca reescreva entrada que já existe lá sem apontar o conflito e perguntar.
-
 **A mudança.**
 
 Recebido o sim:
 
-1. Crie `.spec/specs/archive/<NNN>-<slug>/`. O `<slug>` é o da spec — o do PDR nomeia a decisão, o da spec nomeia a funcionalidade, e é pela funcionalidade que alguém procura a feature depois. Se a pasta já existir, pare — número de feature não se reaproveita, e destino ocupado é sinal de erro.
-2. Mova para dentro dela os cinco artefatos — na feature abandonada, os que chegaram a existir. Mova, não copie: no fim, `.spec/specs/` não pode ter nenhum arquivo daquela feature.
-3. Escreva `README.md` dentro da pasta arquivada: o que a feature era em uma linha, o que ela entregou, quando abriu e quando fechou, quantas tarefas rodaram, o que foi para `.spec/shared/`, os achados de alcance além da feature que você propôs e o usuário recusou promover — com o motivo da recusa — e, se for o caso, por que a feature foi abandonada e que estágios nunca chegaram a existir.
+1. Crie `.spec/specs/archive/<NNN>-<slug>/`. Tanto o `<NNN>` quanto o `<slug>` encontram-se no PDR, se precisar, leia-o. Se a pasta já existir, pare — número de feature não se reaproveita, e destino ocupado é sinal de erro.
+2. Mova para dentro dela tudo que está na raiz de `.spec/specs/`, menos a própria pasta `archive/`. Mova, não copie: no fim, a raiz fica vazia.
+3. Escreva `README.md` dentro da pasta arquivada: o que a feature era em uma linha, o que ela entregou, quando abriu e quando fechou, quantas tarefas rodaram, os achados do log que não foram consertados, o que não funcionou e por quê, e, se for o caso, por que a feature foi abandonada e que estágios nunca chegaram a existir. É a memória desta feature — o que vale para as próximas, quem promove é o usuário.
 4. Não apague nada. Nada mesmo. Se algo parece sobrar, reporte em vez de remover.
 
 **Antes de entregar.**
 
-Confira: a pasta de destino tem os cinco artefatos mais o README — na feature abandonada, os artefatos que existiram mais o README nomeando os estágios que nunca existiram; `.spec/specs/` não tem mais nenhum arquivo da feature; o que subiu para `.spec/shared/` é o que o usuário aprovou, sem acréscimo; `resources/` está intocado.
+Confira: a pasta de destino tem os cinco artefatos mais o README — na feature abandonada, os artefatos que existiram mais o README nomeando os estágios que nunca existiram; a raiz de `.spec/specs/` está vazia; `.spec/shared/` está intocado; `resources/` está intocado.
 
 **A revisão.**
 
 Feita a conferência, invoque o subagente `revisor`, informando o caminho da pasta arquivada e a etapa `ARCHIVE`. Corrija os achados bloqueantes antes de entregar.
 
-Ao terminar, informe a pasta criada, o que foi movido, o que subiu para `.spec/shared/` e o que o `revisor` apontou.
+Ao terminar, informe a pasta criada, o que foi movido e o que o `revisor` apontou.
 ```
 
 ---
@@ -556,6 +598,9 @@ Modelo do Product Decision Record, clonado pela skill `pdr`.
 - **Data:** <AAAA-MM-DD>
 - **Escopo:** <versão, período ou área do produto que esta decisão alcança>
 - **Autor(es):** <quem decidiu>
+- **Aprovado por:** <quem aprovou, quando, e o que foi apresentado antes da escrita>
+- **ID da feature:** <NNN>
+- **Slug adotado**: <slug>
 
 ## Contexto
 
@@ -597,6 +642,7 @@ Modelo da especificação técnica, clonado pela skill `spec`.
 - **PDR de origem:** PDR-<NNN> — <título do PDR>
 - **Data:** <AAAA-MM-DD>
 - **Autor(es):** <quem especificou>
+- **Aprovado por:** <quem aprovou, quando, e o que foi apresentado antes da escrita>
 
 ## Objetivo
 
@@ -680,6 +726,7 @@ Modelo do plano de engenharia, clonado pela skill `plan`.
 - **SPEC de origem:** SPEC-<NNN> — <título da spec>
 - **Data:** <AAAA-MM-DD>
 - **Autor(es):** <quem planejou>
+- **Aprovado por:** <quem aprovou, quando, e o que foi apresentado antes da escrita>
 
 ## Estratégia
 
@@ -708,7 +755,8 @@ Modelo do plano de engenharia, clonado pela skill `plan`.
 ### E<N> — <nome curto e imperativo>
 
 - **Faz:** <o que entrega, em uma frase>
-- **Arquivos:** <caminhos exatos>
+- **Arquivos:** <caminhos exatos> — inclui o que o comando de verificação escreve
+- **Recursos:** <banco, porta, serviço, variável de ambiente> ou nenhum
 - **Verificação:** <comando ou observação> → <resultado que aprova>
 - **Depende de:** <E<N>, E<N>> ou nenhuma
 - **Paralelizável com:** <E<N>> ou nenhuma
@@ -739,13 +787,15 @@ Modelo da lista de tarefas, clonado pela skill `tasks`.
 # TASKS-<NNN> — <a funcionalidade em uma linha>
 
 - **Status:** rascunho | aprovado | em execução | concluído
+- **Paralelismo:** não | sim
 - **PLAN de origem:** PLAN-<NNN> — <título do plano>
 - **Data:** <AAAA-MM-DD>
 - **Autor(es):** <quem decompôs>
+- **Aprovado por:** <quem aprovou, quando, e o que foi apresentado antes da escrita>
 
 ## Como executar
 
-Execute na ordem dos blocos. Dentro de um bloco, as tarefas correm juntas. Duas tarefas com dependência entre si nunca rodam ao mesmo tempo, nem em agentes diferentes nem no mesmo — confira o Mapa de execução antes de despachar. Marque `- [x]` assim que a verificação da tarefa passar — uma por uma, nunca em lote — e atualize a linha de Progresso. Tarefa cuja verificação falhou não é marcada. Se algo no repositório não bater com o que está escrito aqui, pare e reporte: não improvise nem conserte por fora.
+Execute na ordem dos blocos. Dentro de um bloco, as tarefas correm juntas se o campo `Paralelismo` do cabeçalho estiver em `sim`; em `não`, execute uma tarefa por vez, na ordem, mesmo onde daria para paralelizar. Duas tarefas com dependência entre si nunca rodam ao mesmo tempo, nem em agentes diferentes nem no mesmo — confira o Mapa de execução antes de despachar. Marque `- [x]` assim que a verificação da tarefa passar — uma por uma, nunca em lote — e atualize a linha de Progresso. Tarefa cuja verificação falhou não é marcada. Se algo no repositório não bater com o que está escrito aqui, pare e reporte: não improvise nem conserte por fora.
 
 ## Progresso
 
@@ -764,24 +814,20 @@ Execute na ordem dos blocos. Dentro de um bloco, as tarefas correm juntas. Duas 
   - **Etapa do plano:** E<N>
   - **Depende de:** <T<N>> ou nenhuma
   - **Paralelizável com:** <T<N>> ou nenhuma
-  - **Pré-condição:** <o que precisa estar verdadeiro antes de começar, observável>
   - **Arquivos:** <caminho de arquivo, um a um, nunca pasta ou curinga> (criar / alterar / remover) — inclui o que o comando de verificação escreve
   - **Recursos:** <banco, porta, serviço, variável de ambiente> ou nenhum
   - **O que fazer:** <a instrução completa, com interfaces nomeadas e tipadas; nada que exija decisão de quem executa>
   - **Verificação:** `<comando literal>` → <o resultado exato que aprova a tarefa>
-  - **Pós-condição:** <o que passa a ser verdadeiro depois>
   - **Se falhar:** <pare e reporte, ou o passo concreto de desfazer>
 
 - [ ] **T2 — <título imperativo e curto>**
   - **Etapa do plano:** E<N>
   - **Depende de:** <T<N>> ou nenhuma
   - **Paralelizável com:** <T<N>> ou nenhuma
-  - **Pré-condição:** <...>
   - **Arquivos:** <...>
   - **Recursos:** <...> ou nenhum
   - **O que fazer:** <...>
   - **Verificação:** `<comando literal>` → <resultado esperado>
-  - **Pós-condição:** <...>
   - **Se falhar:** <...>
 
 ## Bloco 2 — <o que este bloco entrega>
@@ -790,12 +836,10 @@ Execute na ordem dos blocos. Dentro de um bloco, as tarefas correm juntas. Duas 
   - **Etapa do plano:** E<N>
   - **Depende de:** T1
   - **Paralelizável com:** nenhuma
-  - **Pré-condição:** <a pós-condição de T1, copiada palavra por palavra>
   - **Arquivos:** <...>
   - **Recursos:** <...> ou nenhum
   - **O que fazer:** <...>
   - **Verificação:** `<comando literal>` → <resultado esperado>
-  - **Pós-condição:** <...>
   - **Se falhar:** <...>
 ```
 
@@ -888,16 +932,16 @@ Coisas encontradas durante a execução e deliberadamente **não** consertadas.
 | 1 | T<N> | `<comando>` | <n> |
 ```
 
-### 3.6 `.spec/shared/orientacoes.md`
+### 3.6 `.spec/shared/memory.md`
 
-Crie este arquivo em `.spec/shared/orientacoes.md`, **não** em `.spec/templates/`. Ele não é modelo: é preenchido no lugar e cresce a cada arquivamento. O PDR, a spec e o plano o leem antes de começar.
+Crie este arquivo em `.spec/shared/memory.md`, **não** em `.spec/templates/`. Ele não é modelo: é a memória do projeto, preenchida no lugar pelo usuário. O PDR, a spec e o plano o leem antes de começar.
 
 ```markdown
-# Orientações do projeto
+# Memória do projeto
 
 Este arquivo vale para todas as features. O PDR, a spec e o plano o leem antes de qualquer pergunta, e o que está aqui não se rediscute a cada rodada — mudou, muda aqui, e passa a valer da próxima feature em diante.
 
-Só entra o que serve a mais de uma feature. Aprendizado específico de uma feature fica na pasta arquivada dela.
+Só entra o que serve a mais de uma feature, e quem escreve aqui é o usuário. Aprendizado específico de uma feature fica na pasta arquivada dela.
 
 **Seção com campos entre `<>` está vazia.** Placeholder não é convenção, não é invariante e não é decisão: só vale como orientação o que estiver preenchido. Um arquivo recém-criado não orienta nada.
 
@@ -968,7 +1012,7 @@ Você audita um artefato do fluxo. Quem o escreveu tinha a conversa inteira no c
 
 ## O que você recebe
 
-O caminho do artefato e o nome da etapa que o produziu. Leia o artefato e o modelo correspondente em `.spec/templates/`. Quando a etapa for `SPEC`, leia também o PDR de origem citado no cabeçalho; quando for `PLAN`, leia também a spec de origem e o código em `resources/` que o plano diz tocar; quando for `TASKS`, leia também o plano de origem; quando for `EXEC`, leia também o arquivo de tarefas de origem; quando for `ARCHIVE`, leia a pasta arquivada inteira, o `.spec/shared/` e o conteúdo de `.spec/specs/`. Não peça contexto, não pergunte nada, não tente reconstruir a conversa: se faltou informação, isso é um achado.
+O caminho do artefato e o nome da etapa que o produziu. Leia o artefato e o modelo correspondente em `.spec/templates/`. Quando a etapa for `SPEC`, leia também o PDR de origem citado no cabeçalho; quando for `PLAN`, leia também a spec de origem e o código em `resources/` que o plano diz tocar; quando for `TASKS`, leia também o plano de origem; quando for `EXEC`, leia também o arquivo de tarefas de origem; quando for `ARCHIVE`, leia a pasta arquivada inteira e o conteúdo de `.spec/specs/`. Quando a etapa for `PDR`, `SPEC` ou `PLAN`, leia também `.spec/shared/memory.md` — são as três etapas que o consultam antes de decidir. Não peça contexto, não pergunte nada, não tente reconstruir a conversa: se faltou informação, isso é um achado.
 
 ## O que você nunca faz
 
@@ -985,15 +1029,16 @@ Uma linha por achado, agrupadas por severidade:
 - **Grave** — vai custar caro depois, mas não trava agora.
 - **Observação** — vale corrigir se for barato.
 
-Cada achado cita a seção onde está e diz qual item da lista foi violado. Não havendo achado, responda exatamente: `Nenhum defeito encontrado.`
+Cada achado cita a seção onde está e diz qual item da lista foi violado. Não havendo achado, responda exatamente: `Nenhum defeito encontrado.` A resposta não leva seção alguma além dos achados — nada de "o que foi conferido", "o que passou" ou resumo do método. Quem lê precisa achar o defeito, não a prova de diligência.
 
 ## Listas por etapa
 
 Use apenas a lista da etapa que lhe foi informada. Se a etapa não estiver abaixo, diga isso e pare — não improvise critério.
 
-Antes da lista da etapa, confira sempre este item, que vale para todas:
+Antes da lista da etapa, confira sempre estes dois itens, que valem para todas:
 
 - **Status promovido sem aprovação.** O artefato chega com o `Status` já avançado — `aceito`, `aprovada`, `aprovado`, `concluído` — sem que o texto entregue registre a aprovação do usuário. Bloqueante: é assim que uma etapa passa pela porta da seguinte sem ninguém ter dito sim.
+- **Contradiz a memória do projeto.** Nas etapas `PDR`, `SPEC` e `PLAN`: o artefato adota o que `.spec/shared/memory.md` veta, ignora uma versão fixada, repete um caminho já tentado e recusado, ou contraria um invariante — sem que o próprio artefato registre que está mudando aquela orientação. Bloqueante: o que está na memória não se rediscute por omissão, e decisão que a contraria sem dizer que a contraria é como a orientação morre.
 
 ### PDR
 
@@ -1021,6 +1066,7 @@ Antes da lista da etapa, confira sempre este item, que vale para todas:
 11. **Lista aberta.** "Etc.", "entre outros", "e assim por diante" ou reticências em lista que precisa ser fechada.
 12. **Campo vazio ou placeholder.** Campo do modelo mantido com `<...>`, "a definir" ou "TBD".
 13. **ID divergente.** O `<NNN>` do nome do arquivo ou do título não é o mesmo do PDR de origem citado no cabeçalho. Bloqueante — é esse número que amarra os artefatos da feature.
+14. **Slug divergente.** O `<slug>` do nome do arquivo não é o mesmo do PDR de origem.
 
 ### PLAN
 
@@ -1028,7 +1074,7 @@ Antes da lista da etapa, confira sempre este item, que vale para todas:
 2. **Ciclo no grafo.** Duas ou mais etapas que dependem uma da outra, direta ou por cadeia. Bloqueante.
 3. **Ordem impossível.** Etapa que usa arquivo, função ou dependência produzida por etapa posterior, ou por etapa da mesma onda. Bloqueante.
 4. **Critério da spec sem etapa.** Critério de aceitação da spec de origem que nenhuma etapa atende. Bloqueante.
-5. **Paralelismo falso.** Etapas declaradas paralelizáveis que escrevem no mesmo arquivo, ou entre as quais existe dependência declarada.
+5. **Paralelismo falso.** Etapas declaradas paralelizáveis que escrevem no mesmo arquivo, que usam o mesmo recurso, ou entre as quais existe dependência declarada. Bloqueante — onda errada vira bloco errado, e bloco errado quebra a execução.
 6. **Efeito colateral não levantado.** Arquivo com ação `alterar` ou `remover` no Mapa de arquivos sem linha correspondente em Efeitos colaterais, e sem afirmação de que nada depende dele.
 7. **Mapa furado.** Caminho citado numa etapa e ausente do Mapa de arquivos, ou linha do mapa que nenhuma etapa realiza.
 8. **Etapa sem destino.** Etapa que não atende critério nenhum da spec nem habilita outra etapa que atenda.
@@ -1038,33 +1084,32 @@ Antes da lista da etapa, confira sempre este item, que vale para todas:
 12. **Ondas inconsistentes.** A tabela de Ordem de execução contradiz os campos "Depende de", ou o caminho crítico declarado não é a cadeia mais longa do grafo.
 13. **Campo vazio ou placeholder.** Campo do modelo mantido com `<...>`, "a definir" ou "TBD".
 14. **ID divergente.** O `<NNN>` do arquivo ou do título não é o mesmo da spec de origem. Bloqueante.
-15. **Slug divergente.** O `<slug>` do nome do arquivo não é o mesmo da spec de origem.
+15. **Slug divergente.** O `<slug>` do nome do arquivo não é o mesmo do PDR da feature.
 
 ### TASKS
 
 1. **Tarefa que decide.** A tarefa devolve uma escolha ao executor: "escolha a melhor abordagem", "ajuste conforme o projeto", "se aplicável", "conforme necessário". Bloqueante.
 2. **Tarefa presa ao contexto.** Só se entende tendo lido o plano, a spec ou a conversa: fala em "o arquivo de configuração", "o serviço que criamos", "conforme decidido", sem nomear. Bloqueante.
 3. **Verificação não executável.** Sem comando literal que dê para copiar e rodar, ou sem o resultado exato que aprova. Bloqueante.
-4. **Dependência para frente.** "Depende de" apontando tarefa de número maior, ou pré-condição que só uma tarefa posterior produz. Bloqueante.
+4. **Dependência para frente.** "Depende de" apontando tarefa de número maior. Bloqueante.
 5. **Etapa do plano sem tarefa.** Etapa do plano de origem que nenhuma tarefa realiza. Bloqueante.
 6. **Declarações em conflito.** A mesma tarefa aparece no "Depende de" e no "Paralelizável com" de outra, ou esses campos contradizem o bloco em que as tarefas estão. Bloqueante.
 7. **Bloco mal formado.** Tarefas no mesmo bloco com dependência entre si, direta ou por cadeia, com o mesmo arquivo em "Arquivos", ou com o mesmo recurso em "Recursos". Bloqueante.
-8. **Dependência escondida entre irmãs.** A pré-condição de uma tarefa é a pós-condição de outra tarefa do mesmo bloco. Existe dependência real que "Depende de" não declarou. Bloqueante.
-9. **Mapa de execução ausente ou incoerente.** O mapa não existe, contradiz os campos das tarefas, ou repete arquivo ou recurso entre duas tarefas do mesmo bloco. Bloqueante.
-10. **Caminho que não é arquivo.** "Arquivos" traz pasta, curinga ou "todos os arquivos de". Isso cega a comparação de colisão entre tarefas paralelas. Bloqueante.
-11. **Escrita da verificação não declarada.** O comando de verificação escreve lockfile, cache, diretório de build, cobertura, migração ou artefato equivalente, e esses caminhos não estão em "Arquivos".
-12. **Recurso compartilhado não declarado.** A tarefa usa banco, porta, serviço, variável de ambiente ou diretório temporário fixo, e o campo "Recursos" está vazio.
-13. **Pré-condição reescrita.** A pré-condição não é o estado inicial do repositório nem a pós-condição, palavra por palavra, de uma das tarefas em "Depende de".
-14. **Leitura na lista de escrita.** "Arquivos" cita arquivo que a tarefa apenas lê — isso cega a checagem de colisão entre tarefas paralelas.
-15. **Tarefa órfã.** Tarefa que não aponta nenhuma etapa do plano.
-16. **Tarefa composta.** Entrega mais de uma coisa, ou a verificação precisa de mais de um resultado para aprovar.
-17. **Caminho inexato.** Arquivo citado sem caminho completo, ou caminho que não existe em `resources/` e que nenhuma tarefa anterior cria.
-18. **Caixa marcada cedo.** Tarefa entregue com `- [x]` antes da execução, ou linha de Progresso incoerente com as caixas.
-19. **Tarefa sem volta.** Tarefa que mexe em estado difícil de desfazer sem "Se falhar" concreto.
-20. **Numeração furada.** Buraco na sequência `T<N>`, número repetido ou reaproveitado.
-21. **Campo vazio ou placeholder.** Campo do modelo mantido com `<...>`, "a definir" ou "TBD".
-22. **ID divergente.** O `<NNN>` do arquivo ou do título não é o mesmo do plano de origem. Bloqueante.
-23. **Slug divergente.** O `<slug>` do nome do arquivo não é o mesmo do plano de origem.
+8. **Mapa de execução ausente ou incoerente.** O mapa não existe, contradiz os campos das tarefas, ou repete arquivo ou recurso entre duas tarefas do mesmo bloco. Bloqueante.
+9. **Caminho que não é arquivo.** "Arquivos" traz pasta, curinga ou "todos os arquivos de". Isso cega a comparação de colisão entre tarefas paralelas. Bloqueante — salvo pasta em tarefa de remoção que não é paralelizável com ninguém.
+10. **Escrita da verificação não declarada.** O comando de verificação escreve lockfile, cache, diretório de build, cobertura, migração ou artefato equivalente, e esses caminhos não estão em "Arquivos".
+11. **Recurso compartilhado não declarado.** A tarefa usa banco, porta, serviço, variável de ambiente ou diretório temporário fixo, e o campo "Recursos" está vazio.
+12. **Leitura na lista de escrita.** "Arquivos" cita arquivo que a tarefa apenas lê — isso cega a checagem de colisão entre tarefas paralelas.
+13. **Tarefa órfã.** Tarefa que não aponta nenhuma etapa do plano.
+14. **Tarefa composta.** Entrega mais de uma coisa, ou a verificação precisa de mais de um resultado para aprovar.
+15. **Caminho inexato.** Arquivo citado sem caminho completo, ou caminho que não existe em `resources/` e que nenhuma tarefa anterior cria.
+16. **Caixa marcada cedo.** Tarefa entregue com `- [x]` antes da execução, ou linha de Progresso incoerente com as caixas.
+17. **Tarefa sem volta.** Tarefa que mexe em estado difícil de desfazer sem "Se falhar" concreto.
+18. **Numeração furada.** Buraco na sequência `T<N>`, número repetido ou reaproveitado.
+19. **Campo vazio ou placeholder.** Campo do modelo mantido com `<...>`, "a definir" ou "TBD".
+20. **ID divergente.** O `<NNN>` do arquivo ou do título não é o mesmo do plano de origem. Bloqueante.
+21. **Slug divergente.** O `<slug>` do nome do arquivo não é o mesmo do PDR da feature.
+22. **Paralelismo sem liberação.** O campo `Paralelismo` do cabeçalho está ausente, com placeholder, ou em `sim` sem que o texto entregue registre o usuário tendo liberado em palavras. Bloqueante — paralelizar é decisão do usuário, nunca padrão do agente.
 ### EXEC
 
 1. **Conclusão sem prova.** Tarefa com resultado `concluída` sem comando de verificação, sem código de saída ou sem saída registrada. Bloqueante.
@@ -1074,7 +1119,7 @@ Antes da lista da etapa, confira sempre este item, que vale para todas:
 5. **Paralelismo indevido.** Duas tarefas com dependência entre si, com arquivo em comum ou com recurso em comum, despachadas ao mesmo tempo para agentes diferentes. Bloqueante.
 6. **Rodadas concorrentes.** O log registra execução iniciada com outra rodada da mesma feature em curso, ou com o arquivo de tarefas já em `Status: em execução`. Bloqueante.
 7. **Bloco sem conferência.** Bloco encerrado e o seguinte aberto sem linha correspondente na tabela de Conferência por bloco. Bloqueante — é o que permite o resto da rodada correr sobre estado sujo.
-8. **Inventário inicial ausente.** A seção Inventário inicial está vazia, sem o comando que a levantou, ou sem o caminho do inventário completo: sem base de comparação, nenhuma conferência posterior prova coisa alguma. Bloqueante.
+8. **Inventário inicial ausente.** A seção Inventário inicial está vazia, sem o comando que a levantou, sem o caminho do inventário completo, ou — num log com mais de uma rodada — sem uma linha para cada rodada da tabela de Rodadas: sem base de comparação, nenhuma conferência posterior prova coisa alguma. Bloqueante.
 9. **Rodada sobrescrita.** A tabela de Rodadas tem uma linha só num log que registra retomada, ou o registro anterior sumiu. Bloqueante — retomada acrescenta, nunca apaga.
 10. **Instalação pelo executor.** A trilha registra instalação de pacote ou ferramenta dentro de uma tarefa, em vez de feita pelo orquestrador contra as Dependências do plano.
 11. **Verificação trocada.** O comando registrado difere do comando escrito na tarefa e não há linha correspondente em Desvios.
@@ -1086,21 +1131,19 @@ Antes da lista da etapa, confira sempre este item, que vale para todas:
 17. **Trilha incompleta.** Comando citado no Registro por tarefa e ausente da tabela de Comandos executados.
 18. **Campo vazio ou placeholder.** Campo do modelo mantido com `<...>`, "a definir" ou "TBD".
 19. **ID divergente.** O `<NNN>` do arquivo ou do título não é o mesmo do arquivo de tarefas de origem. Bloqueante.
-20. **Slug divergente.** O `<slug>` do log, ou o do arquivo de inventário que ele aponta, não é o mesmo do arquivo de tarefas de origem.
+20. **Slug divergente.** O `<slug>` do log, ou o do arquivo de inventário que ele aponta, não é o mesmo do PDR da feature.
 
 ### ARCHIVE
 
 1. **Feature em aberto.** A pasta foi arquivada com log de execução `em execução` ou `interrompida`, ou com caixa desmarcada no arquivo de tarefas, e o README não registra abandono nem o ponto de parada. Bloqueante.
 2. **Artefato faltando.** A pasta arquivada não tem os cinco artefatos — PDR, spec, plano, tarefas e log — mais o README, e o README não registra o abandono nomeando os estágios que nunca existiram. Bloqueante.
-3. **Sobra na origem.** Ainda existe arquivo daquela feature em `.spec/specs/`. Bloqueante — foi cópia, não mudança.
-4. **Entrada não aprovada.** O `.spec/shared/` ganhou entrada que o README da feature não registra como colhida.
-5. **Colheita específica demais.** Entrada em `.spec/shared/` que só vale para esta feature: cita tarefa, arquivo ou decisão sem alcance além dela.
-6. **Conflito silencioso.** Entrada nova em `.spec/shared/` que contradiz entrada existente sem que o conflito esteja apontado.
-7. **Achado perdido.** Achado do log com alcance além da feature que não aparece nem em `.spec/shared/` nem no README como descartado.
-8. **README raso.** O README não diz o que a feature entregou, quando abriu e fechou, ou o que subiu para o compartilhado.
-9. **Código tocado.** Há sinal de alteração em `resources/` nesta etapa. Bloqueante.
-10. **Numeração reaproveitada.** Já existe outra pasta arquivada com o mesmo `<NNN>`. Bloqueante.
-11. **Slug da pasta errado.** O `<slug>` da pasta arquivada não é o da spec de origem.
+3. **Sobra na origem.** Sobrou algo na raiz de `.spec/specs/`. Bloqueante — foi cópia, não mudança.
+4. **Achado perdido.** Achado do log que não foi consertado e não aparece no README da pasta arquivada.
+5. **Compartilhado tocado.** O README da pasta arquivada ou o relatório de arquivamento registram escrita em `.spec/shared/` feita nesta etapa. Bloqueante — quem escreve a memória do projeto é o usuário.
+6. **README raso.** O README não diz o que a feature entregou, quando abriu e fechou, nem o que ela ensinou.
+7. **Código tocado.** O README da pasta arquivada ou o relatório de arquivamento registram alteração em `resources/` feita nesta etapa. Bloqueante — esta etapa mexe apenas em `.spec/`.
+8. **Numeração reaproveitada.** Já existe outra pasta arquivada com o mesmo `<NNN>`. Bloqueante.
+9. **Slug da pasta errado.** O `<slug>` da pasta arquivada não é o do PDR da feature.
 ```
 
 ### 4.2 `.claude/agents/executor.md`
