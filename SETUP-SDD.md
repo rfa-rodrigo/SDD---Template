@@ -540,7 +540,7 @@ E com o bloco abaixo como corpo, copiado literalmente:
 
 **Não toque em `resources/`.** Nem para ler o resultado, nem para limpar nada. O código já foi entregue pela execução; aqui se mexe apenas em `.spec/`.
 
-**Não escreva em `.spec/shared/`.** A memória do projeto é do usuário; o arquivamento não promove nada para lá. O que a feature ensinou fica no README da pasta arquivada, e quem decide o que vira regra do projeto é ele, quando quiser.
+**A memória.** Escrito o README, releia a seção "O que a feature ensinou" e proponha ao usuário quais entradas sobem para `.spec/shared/memory.md`, cada uma com a seção de destino. O critério é um só: **vale para a próxima feature?** Se vale só para esta, fica no README. Espere o sim, entrada por entrada, e só então escreva. Entrada que contradiz uma existente não substitui em silêncio: aponte o conflito e pergunte.
 
 **Entrada.**
 
@@ -564,18 +564,18 @@ Recebido o sim:
 
 1. Crie `.spec/specs/archive/<NNN>-<slug>/`. Tanto o `<NNN>` quanto o `<slug>` encontram-se no PDR, se precisar, leia-o. Se a pasta já existir, pare — número de feature não se reaproveita, e destino ocupado é sinal de erro.
 2. Mova para dentro dela tudo que está na raiz de `.spec/specs/`, menos a própria pasta `archive/`. Mova, não copie: no fim, a raiz fica vazia.
-3. Escreva `README.md` dentro da pasta arquivada: o que a feature era em uma linha, o que ela entregou, quando abriu e quando fechou, quantas tarefas rodaram, os achados do log que não foram consertados, o que não funcionou e por quê, e, se for o caso, por que a feature foi abandonada e que estágios nunca chegaram a existir. É a memória desta feature — o que vale para as próximas, quem promove é o usuário.
+3. Escreva `README.md` dentro da pasta arquivada: o que a feature era em uma linha, o que ela entregou, quando abriu e quando fechou, quantas tarefas rodaram, os achados do log que não foram consertados, o que não funcionou e por quê, o que foi promovido para a memória e o que foi proposto e recusado — com o motivo —, e, se for o caso, por que a feature foi abandonada e que estágios nunca chegaram a existir. É a memória desta feature — o que vale para as próximas, quem promove é o usuário.
 4. Não apague nada. Nada mesmo. Se algo parece sobrar, reporte em vez de remover.
 
 **Antes de entregar.**
 
-Confira: a pasta de destino tem os cinco artefatos mais o README — na feature abandonada, os artefatos que existiram mais o README nomeando os estágios que nunca existiram; a raiz de `.spec/specs/` está vazia; `.spec/shared/` está intocado; `resources/` está intocado.
+Confira: a pasta de destino tem os cinco artefatos mais o README — na feature abandonada, os artefatos que existiram mais o README nomeando os estágios que nunca existiram; a raiz de `.spec/specs/` está vazia; o que subiu para `.spec/shared/` é o que o usuário aprovou, sem acréscimo; `resources/` está intocado.
 
 **A revisão.**
 
 Feita a conferência, invoque o subagente `revisor`, informando o caminho da pasta arquivada e a etapa `ARCHIVE`. Corrija os achados bloqueantes antes de entregar.
 
-Ao terminar, informe a pasta criada, o que foi movido e o que o `revisor` apontou.
+Ao terminar, informe a pasta criada, o que foi movido, o que subiu para a memória e o que o `revisor` apontou.
 ```
 
 ---
@@ -934,14 +934,14 @@ Coisas encontradas durante a execução e deliberadamente **não** consertadas.
 
 ### 3.6 `.spec/shared/memory.md`
 
-Crie este arquivo em `.spec/shared/memory.md`, **não** em `.spec/templates/`. Ele não é modelo: é a memória do projeto, preenchida no lugar pelo usuário. O PDR, a spec e o plano o leem antes de começar.
+Crie este arquivo em `.spec/shared/memory.md`, **não** em `.spec/templates/`. Ele não é modelo: é a memória do projeto, preenchida no lugar pelo `archive`, entrada por entrada, com aprovação do usuário. O PDR, a spec e o plano o leem antes de começar.
 
 ```markdown
 # Memória do projeto
 
 Este arquivo vale para todas as features. O PDR, a spec e o plano o leem antes de qualquer pergunta, e o que está aqui não se rediscute a cada rodada — mudou, muda aqui, e passa a valer da próxima feature em diante.
 
-Só entra o que serve a mais de uma feature, e quem escreve aqui é o usuário. Aprendizado específico de uma feature fica na pasta arquivada dela.
+Só entra o que serve a mais de uma feature, e quem escreve aqui é o `archive`, entrada por entrada, depois de o usuário aprovar cada uma. Aprendizado específico de uma feature fica na pasta arquivada dela.
 
 **Seção com campos entre `<>` está vazia.** Placeholder não é convenção, não é invariante e não é decisão: só vale como orientação o que estiver preenchido. Um arquivo recém-criado não orienta nada.
 
@@ -1139,8 +1139,8 @@ Antes da lista da etapa, confira sempre estes dois itens, que valem para todas:
 2. **Artefato faltando.** A pasta arquivada não tem os cinco artefatos — PDR, spec, plano, tarefas e log — mais o README, e o README não registra o abandono nomeando os estágios que nunca existiram. Bloqueante.
 3. **Sobra na origem.** Sobrou algo na raiz de `.spec/specs/`. Bloqueante — foi cópia, não mudança.
 4. **Achado perdido.** Achado do log que não foi consertado e não aparece no README da pasta arquivada.
-5. **Compartilhado tocado.** O README da pasta arquivada ou o relatório de arquivamento registram escrita em `.spec/shared/` feita nesta etapa. Bloqueante — quem escreve a memória do projeto é o usuário.
-6. **README raso.** O README não diz o que a feature entregou, quando abriu e fechou, nem o que ela ensinou.
+5. **Memória escrita sem aprovação.** Entrada nova em `.spec/shared/memory.md` que o README da feature não registra como promovida e aprovada, ou que contradiz entrada existente sem o conflito apontado. Bloqueante — é a memória do projeto; entrada que ninguém aprovou vira regra que ninguém decidiu.
+6. **README raso.** O README não diz o que a feature entregou, quando abriu e fechou, o que ela ensinou, nem o que foi promovido para a memória.
 7. **Código tocado.** O README da pasta arquivada ou o relatório de arquivamento registram alteração em `resources/` feita nesta etapa. Bloqueante — esta etapa mexe apenas em `.spec/`.
 8. **Numeração reaproveitada.** Já existe outra pasta arquivada com o mesmo `<NNN>`. Bloqueante.
 9. **Slug da pasta errado.** O `<slug>` da pasta arquivada não é o do PDR da feature.

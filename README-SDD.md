@@ -6,7 +6,13 @@ Spec-driven development em seis estágios: **pdr → spec → plan → tasks →
 
 Antes de abrir a sessão, coloque o `CLAUDE.md` na raiz do projeto — são as diretrizes de comportamento que valem para todas as sessões. Ele é carregado na abertura, e só na abertura: arquivo posto depois não entra na sessão que já está rodando.
 
-Com ele no lugar, coloque o `SETUP-SDD.md` na raiz e peça ao agente para executá-lo. Nada é sobrescrito.
+Com ele no lugar, coloque o `SETUP-SDD.md` na raiz, abra a sessão e diga:
+
+```
+Leia o SETUP-SDD.md na raiz deste projeto e execute-o do início ao fim, seguindo as regras de execução dele.
+```
+
+Nada é sobrescrito. Ao terminar, o agente relata o que criou e o que pulou — e nada além disso.
 
 O setup não instala nada, não pede rede e não depende de ferramenta de terceiro. Ele cria pastas e escreve arquivos, e para na primeira coisa que já existir em vez de sobrescrever.
 
@@ -89,15 +95,15 @@ Quem promove é a própria skill, **depois** de o usuário aprovar em palavras. 
 
 ## O que atravessa features
 
-`.spec/shared/memory.md` é a memória do projeto e o único arquivo que não é clonado: é preenchido no lugar, e **por você**. Vocabulário, stack e versões fixadas, convenções, invariantes, limites e políticas, decisões permanentes, **caminhos já tentados** e armadilhas conhecidas.
+`.spec/shared/memory.md` é a memória do projeto e o único arquivo que não é clonado: é preenchido no lugar, pelo `archive`, entrada por entrada, e só com o seu sim. Vocabulário, stack e versões fixadas, convenções, invariantes, limites e políticas, decisões permanentes, **caminhos já tentados** e armadilhas conhecidas.
 
 O PDR, a spec e o plano o leem antes de qualquer pergunta, e o que está lá não se rediscute a cada rodada — contradizê-lo é achado a reportar, não escolha a fazer. Seção com campos entre `<>` está vazia: placeholder não é convenção, não é invariante e não é decisão.
 
-Nenhuma skill escreve nele. O `archive` deixa o que a feature ensinou no README da pasta arquivada; o que vale para as próximas, quem promove é você. Encher a memória de detalhe morto é a forma mais rápida de fazer todo mundo parar de lê-la.
+No arquivamento, o `archive` relê o que a feature ensinou e propõe o que sobe. O critério é um só: **vale para a próxima feature?** Se vale só para esta, fica no README da pasta arquivada. Você aprova entrada por entrada, e o `archive` escreve. Encher a memória de detalhe morto é a forma mais rápida de fazer todo mundo parar de lê-la.
 
 ## O arquivamento
 
-O `archive` não toca em `resources/` nem em `.spec/shared/`. Ele confere o portão de fechamento — log `concluída`, todas as caixas marcadas, nenhuma contaminação em aberto —, **move** tudo que está na raiz de `.spec/specs/` para `.spec/specs/archive/<NNN>-<slug>/` e escreve ali o README com a memória da feature. Não apaga nada.
+O `archive` não toca em `resources/`. Ele confere o portão de fechamento — log `concluída`, todas as caixas marcadas, nenhuma contaminação em aberto —, **move** tudo que está na raiz de `.spec/specs/` para `.spec/specs/archive/<NNN>-<slug>/`, escreve ali o README com a memória da feature, e propõe o que dela sobe para a memória do projeto. Não apaga nada.
 
 Feature abandonada também se arquiva, com menos artefatos do que os cinco, desde que o README da pasta registre por que foi abandonada e que estágios nunca existiram. Abandono com rastro é legítimo; abandono silencioso não.
 
@@ -110,15 +116,3 @@ Por isso o `executor` confere estado antes de agir: antes de criar, se já exist
 ## A regra que quase todo mundo quebra
 
 Durante a execução você vai descobrir que uma etapa estava errada. Quando acontecer, **pare e suba**: conserte no artefato de origem e refaça o que dele depende. Consertar direto no código "só desta vez" é o ponto exato em que SDD vira documentação morta — e aí você pagou o overhead sem receber o benefício.
-
-## Estado atual
-
-O documento passou por três rodadas de auditoria de leitura, com verificação adversarial de cada achado, e depois por **duas features rodadas de ponta a ponta** — uma em Python, uma em C++ —, com instalação limpa antes de cada uma.
-
-**O que as rodadas provaram.** O setup instala determinístico a partir do documento, sem rede. O `revisor` acha defeito real e prova executando: em onze auditorias, sete voltaram limpas e quatro trouxeram achados, todos verdadeiros — inclusive um comando de verificação que não rodava e uma spec que adotava dependência proibida pelo PDR. O `executor` obedeceu ao escopo nas quatro tarefas, com contaminação zero conferida por inventário, e a válvula produziu dezesseis achados registrados e não consertados. Portões, cadeia de status, propagação de slug e a varredura do arquivamento funcionaram.
-
-**O que continua sem teste.** O despacho paralelo nunca rodou: as duas features eram cadeias sequenciais. As skills nunca foram carregadas pelo harness como skills de verdade — foram lidas e seguidas. A retomada de rodada morta, a parada obrigatória por verificação que falha, o comando destrutivo, a instalação de dependência pelo orquestrador e o `memory.md` preenchido: nenhum desses caminhos foi exercido.
-
-**Como ler isso.** Uma checagem que nunca disparou não está provada, só não atrapalhou. E quem operou os dois testes também escreveu o documento — a segunda feature passou limpa nas três primeiras auditorias porque o operador já sabia o que o revisor procura, não porque o fluxo tenha ficado mais fácil. A sua primeira feature vai parecer mais com a primeira do teste.
-
-**Antes do primeiro caso real:** ponha `resources/` sob controle de versão, que é o único desfazer de verdade; escolha uma feature que justifique a cerimônia, porque em trabalho trivial os artefatos ficam maiores que o código; e comece com `Paralelismo: não`.
