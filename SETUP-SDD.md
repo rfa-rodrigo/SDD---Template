@@ -127,9 +127,13 @@ Releia o que escreveu procurando quatro defeitos: campo com placeholder ou "a de
 
 **A revisão.**
 
-Escrito o arquivo e feita a autorrevisão, invoque o subagente `revisor`, informando o caminho do PDR e a etapa `PDR`. Ele lê só o arquivo e o modelo, procura defeitos numa lista fechada e devolve achados por severidade — corrigir não é função dele. Achado bloqueante você corrige antes de entregar; o resto você apresenta e o usuário decide.
+Escrito o arquivo e feita a autorrevisão, invoque o subagente `revisor`, informando o caminho do PDR e a etapa `PDR`. Ele lê só o arquivo e o modelo, procura defeitos numa lista fechada e devolve achados por severidade — corrigir não é função dele. A revisão é um laço: corrija os achados bloqueantes e graves e invoque o `revisor` de novo, até ele não devolver nenhum dos dois. Cada volta é uma invocação nova — ele não lembra da anterior, e é isso que a faz valer.
 
-Ao terminar, informe o caminho do arquivo, o que o `revisor` apontou e o que foi corrigido, e peça a revisão do usuário.
+Três voltas é o teto. Se na terceira ainda houver bloqueante ou grave, pare: mostre ao usuário o que não convergiu e espere a decisão dele.
+
+Pare o laço também, em qualquer volta, diante de achado que você não pode corrigir sozinho: o que depende de uma resposta do usuário. Observação não entra no laço: você apresenta e o usuário decide.
+
+Ao terminar, informe o caminho do arquivo, quantas voltas houve, o que o `revisor` apontou e o que foi corrigido em cada uma, e peça a revisão do usuário.
 
 **A aprovação.**
 
@@ -211,9 +215,13 @@ Releia procurando: campo com placeholder; critério subjetivo; entrada sem caso 
 
 **A revisão.**
 
-Escrita a spec e feita a autorrevisão, invoque o subagente `revisor`, informando o caminho do arquivo e a etapa `SPEC`. Corrija os achados bloqueantes antes de entregar; o resto você apresenta e o usuário decide.
+Escrita a spec e feita a autorrevisão, invoque o subagente `revisor`, informando o caminho do arquivo e a etapa `SPEC`. A revisão é um laço: corrija os achados bloqueantes e graves e invoque o `revisor` de novo, até ele não devolver nenhum dos dois. Cada volta é uma invocação nova — ele não lembra da anterior, e é isso que a faz valer.
 
-Ao terminar, informe o caminho do arquivo, o que o `revisor` apontou e o que foi corrigido, e peça a revisão do usuário.
+Três voltas é o teto. Se na terceira ainda houver bloqueante ou grave, pare: mostre ao usuário o que não convergiu e espere a decisão dele.
+
+Pare o laço também, em qualquer volta, diante de achado que você não pode corrigir sozinho: o que depende de uma resposta do usuário, e o que nasce no artefato de origem — esse se conserta lá, não aqui. Observação não entra no laço: você apresenta e o usuário decide.
+
+Ao terminar, informe o caminho do arquivo, quantas voltas houve, o que o `revisor` apontou e o que foi corrigido em cada uma, e peça a revisão do usuário.
 
 **A aprovação.**
 
@@ -300,9 +308,13 @@ Releia procurando: etapa sem verificação observável; ciclo no grafo; etapa qu
 
 **A revisão.**
 
-Escrito o plano e feita a autorrevisão, invoque o subagente `revisor`, informando o caminho do arquivo e a etapa `PLAN`. Corrija os achados bloqueantes antes de entregar; o resto você apresenta e o usuário decide.
+Escrito o plano e feita a autorrevisão, invoque o subagente `revisor`, informando o caminho do arquivo e a etapa `PLAN`. A revisão é um laço: corrija os achados bloqueantes e graves e invoque o `revisor` de novo, até ele não devolver nenhum dos dois. Cada volta é uma invocação nova — ele não lembra da anterior, e é isso que a faz valer.
 
-Ao terminar, informe o caminho do arquivo, o que o `revisor` apontou e o que foi corrigido, e peça a revisão do usuário.
+Três voltas é o teto. Se na terceira ainda houver bloqueante ou grave, pare: mostre ao usuário o que não convergiu e espere a decisão dele.
+
+Pare o laço também, em qualquer volta, diante de achado que você não pode corrigir sozinho: o que depende de uma resposta do usuário, e o que nasce no artefato de origem — esse se conserta lá, não aqui. Observação não entra no laço: você apresenta e o usuário decide.
+
+Ao terminar, informe o caminho do arquivo, quantas voltas houve, o que o `revisor` apontou e o que foi corrigido em cada uma, e peça a revisão do usuário.
 
 **A aprovação.**
 
@@ -400,9 +412,13 @@ Depois percorra bloco a bloco e confira as três, uma de cada vez: nenhuma taref
 
 **A revisão.**
 
-Escrita a lista e feita a autorrevisão, invoque o subagente `revisor`, informando o caminho do arquivo e a etapa `TASKS`. Corrija os achados bloqueantes antes de entregar; o resto você apresenta e o usuário decide.
+Escrita a lista e feita a autorrevisão, invoque o subagente `revisor`, informando o caminho do arquivo e a etapa `TASKS`. A revisão é um laço: corrija os achados bloqueantes e graves e invoque o `revisor` de novo, até ele não devolver nenhum dos dois. Cada volta é uma invocação nova — ele não lembra da anterior, e é isso que a faz valer.
 
-Ao terminar, informe o caminho do arquivo, o que o `revisor` apontou e o que foi corrigido, e peça a revisão do usuário.
+Três voltas é o teto. Se na terceira ainda houver bloqueante ou grave, pare: mostre ao usuário o que não convergiu e espere a decisão dele.
+
+Pare o laço também, em qualquer volta, diante de achado que você não pode corrigir sozinho: o que depende de uma resposta do usuário, e o que nasce no artefato de origem — esse se conserta lá, não aqui. Observação não entra no laço: você apresenta e o usuário decide.
+
+Ao terminar, informe o caminho do arquivo, quantas voltas houve, o que o `revisor` apontou e o que foi corrigido em cada uma, e peça a revisão do usuário.
 
 **A aprovação.**
 
@@ -512,15 +528,16 @@ Log com `Status: em execução` e nenhuma rodada viva é rodada **morta**, não 
 
 **A revisão e o fechamento.**
 
-Terminada a última tarefa possível, invoque o subagente `revisor`, informando o caminho do log e a etapa `EXEC`. Depois trate os achados assim:
+Terminada a última tarefa possível, invoque o subagente `revisor`, informando o caminho do log e a etapa `EXEC`. A revisão é um laço, e o que entra nele depende do achado:
 
-- **Bloqueante que é defeito do registro** — número errado no Resumo, comando ausente da trilha, bloco sem linha de conferência: corrija no log e siga.
-- **Bloqueante que exigiria mexer em `resources/`** — contaminação, tarefa aprovada com verificação que falhou: não corrija. Registre em Desvios, deixe o Status como `interrompida` e reporte. Consertar aqui é exatamente a contaminação que esta etapa existe para impedir.
-- **Não bloqueante:** apresente ao usuário e siga; quem decide é ele.
+- **Bloqueante ou grave que é defeito do registro** — número errado no Resumo, comando ausente da trilha, bloco sem linha de conferência: corrija no log e invoque o `revisor` de novo, até ele não devolver nenhum dos dois. Cada volta é uma invocação nova — ele não lembra da anterior, e é isso que a faz valer. Três voltas é o teto: se na terceira ainda houver bloqueante ou grave, pare e mostre ao usuário o que não convergiu.
+- **Bloqueante ou grave que exigiria mexer em `resources/`** — contaminação, tarefa aprovada com verificação que falhou, desvio da proposta original: não corrija, e não entra no laço. Registre em Desvios, deixe o Status como `interrompida` e reporte. Consertar aqui é exatamente a contaminação que esta etapa existe para impedir.
+- **Bloqueante ou grave que é fato da rodada, e não erro do registro** — instalação feita pelo executor: não há o que corrigir no log, e não entra no laço. Registre em Desvios e reporte ao usuário; quem decide é ele.
+- **Observação:** apresente ao usuário e siga; quem decide é ele.
 
 Fechados os achados, atualize o `Status` do log: `concluída` só quando todas as tarefas estão marcadas, sem contaminação em aberto e sem tarefa interrompida; `interrompida` em qualquer outro caso, dizendo onde parou. Devolva o `Status` do arquivo de tarefas: `concluído` quando todas as caixas estão marcadas, `aprovado` quando sobrou tarefa por fazer. As caixas e o Progresso ficam como ficaram.
 
-Só então informe ao usuário: quantas tarefas concluíram, onde parou e por quê, os desvios, a contaminação encontrada, o que o `revisor` apontou e o que foi corrigido, e o caminho do log. A rodada está entregue nesse ponto, e não antes.
+Só então informe ao usuário: quantas tarefas concluíram, onde parou e por quê, os desvios, a contaminação encontrada, quantas voltas de revisão houve, o que o `revisor` apontou e o que foi corrigido em cada uma, e o caminho do log. A rodada está entregue nesse ponto, e não antes.
 ```
 
 ### 2.7 Skill do arquivamento
@@ -573,9 +590,13 @@ Confira: a pasta de destino tem os cinco artefatos mais o README — na feature 
 
 **A revisão.**
 
-Feita a conferência, invoque o subagente `revisor`, informando o caminho da pasta arquivada e a etapa `ARCHIVE`. Corrija os achados bloqueantes antes de entregar.
+Feita a conferência, invoque o subagente `revisor`, informando o caminho da pasta arquivada e a etapa `ARCHIVE`. A revisão é um laço: corrija os achados bloqueantes e graves e invoque o `revisor` de novo, até ele não devolver nenhum dos dois. Cada volta é uma invocação nova — ele não lembra da anterior, e é isso que a faz valer. Corrija apenas dentro de `.spec/`, e sem apagar nada.
 
-Ao terminar, informe a pasta criada, o que foi movido, o que subiu para a memória e o que o `revisor` apontou.
+Três voltas é o teto. Se na terceira ainda houver bloqueante ou grave, pare: mostre ao usuário o que não convergiu e espere a decisão dele.
+
+Pare o laço também, em qualquer volta, diante de achado que você não pode corrigir sozinho: o que depende de uma resposta do usuário, e o que exigiria tocar em `resources/`. Observação não entra no laço: você apresenta e o usuário decide.
+
+Ao terminar, informe a pasta criada, o que foi movido, o que subiu para a memória, quantas voltas houve, o que o `revisor` apontou e o que foi corrigido em cada uma.
 ```
 
 ---
@@ -1012,7 +1033,7 @@ Você audita um artefato do fluxo. Quem o escreveu tinha a conversa inteira no c
 
 ## O que você recebe
 
-O caminho do artefato e o nome da etapa que o produziu. Leia o artefato e o modelo correspondente em `.spec/templates/`. Quando a etapa for `SPEC`, leia também o PDR de origem citado no cabeçalho; quando for `PLAN`, leia também a spec de origem e o código em `resources/` que o plano diz tocar; quando for `TASKS`, leia também o plano de origem; quando for `EXEC`, leia também o arquivo de tarefas de origem; quando for `ARCHIVE`, leia a pasta arquivada inteira e o conteúdo de `.spec/specs/`. Quando a etapa for `PDR`, `SPEC` ou `PLAN`, leia também `.spec/shared/memory.md` — são as três etapas que o consultam antes de decidir. Não peça contexto, não pergunte nada, não tente reconstruir a conversa: se faltou informação, isso é um achado.
+O caminho do artefato e o nome da etapa que o produziu. Leia o artefato e o modelo correspondente em `.spec/templates/`. Quando a etapa for `SPEC`, leia também o PDR de origem citado no cabeçalho; quando for `PLAN`, leia também a spec de origem e o código em `resources/` que o plano diz tocar; quando for `TASKS`, leia também o plano de origem; quando for `EXEC`, leia também o arquivo de tarefas de origem; quando for `ARCHIVE`, leia a pasta arquivada inteira e o conteúdo de `.spec/specs/`. Quando a etapa for `PDR`, `SPEC` ou `PLAN`, leia também `.spec/shared/memory.md` — são as três etapas que o consultam antes de decidir. Quando a etapa for `PLAN`, `TASKS` ou `EXEC`, leia também o PDR e a spec da feature em `.spec/specs/` — é contra eles que se confere o desvio da proposta original. Não peça contexto, não pergunte nada, não tente reconstruir a conversa: se faltou informação, isso é um achado.
 
 ## O que você nunca faz
 
@@ -1035,10 +1056,11 @@ Cada achado cita a seção onde está e diz qual item da lista foi violado. Não
 
 Use apenas a lista da etapa que lhe foi informada. Se a etapa não estiver abaixo, diga isso e pare — não improvise critério.
 
-Antes da lista da etapa, confira sempre estes dois itens, que valem para todas:
+Antes da lista da etapa, confira sempre estes três itens, cada um nas etapas que ele nomeia:
 
 - **Status promovido sem aprovação.** O artefato chega com o `Status` já avançado — `aceito`, `aprovada`, `aprovado`, `concluído` — sem que o texto entregue registre a aprovação do usuário. Bloqueante: é assim que uma etapa passa pela porta da seguinte sem ninguém ter dito sim.
 - **Contradiz a memória do projeto.** Nas etapas `PDR`, `SPEC` e `PLAN`: o artefato adota o que `.spec/shared/memory.md` veta, ignora uma versão fixada, repete um caminho já tentado e recusado, ou contraria um invariante — sem que o próprio artefato registre que está mudando aquela orientação. Bloqueante: o que está na memória não se rediscute por omissão, e decisão que a contraria sem dizer que a contraria é como a orientação morre.
+- **Desvio da proposta original.** Nas etapas `PLAN`, `TASKS` e `EXEC`: o artefato contraria a Decisão, o Escopo ou o Fora de escopo do PDR da feature, ou contraria uma linha da tabela Viabilidade verificada da spec — usa versão diferente da conferida, ultrapassa o limite assumido, apoia-se no que a spec registrou como risco não confirmado — sem que o próprio artefato registre o desvio. Bloqueante: cada etapa confere só a anterior, e é de etapa em etapa que a feature vira outra coisa sem ninguém ter decidido.
 
 ### PDR
 

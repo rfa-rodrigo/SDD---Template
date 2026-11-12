@@ -87,6 +87,10 @@ A lista fechada é o ponto. Um revisor solto, com a missão de "ver se dá para 
 
 E ele serve porque é cego: quem escreveu o artefato tinha a conversa inteira no contexto, e por isso não enxerga o que falta. O revisor recebe só o arquivo — que é a condição de quem vai ler daqui a um ano.
 
+**A revisão é um laço.** A skill corrige os achados bloqueantes e graves e chama o revisor de novo, numa invocação nova, até ele não devolver nenhum dos dois. O teto são três voltas: se não convergir, a skill para e mostra a você o que sobrou. O laço também para diante do que a skill não pode corrigir sozinha — o que depende de resposta sua, o que nasce no artefato de origem e, na execução, o que exigiria mexer em `resources/`. Observação fica fora do laço: chega a você, que decide.
+
+**Desvio da proposta original.** Cada auditoria confere o artefato contra o antecessor imediato, e é de etapa em etapa que a feature vira outra coisa sem ninguém ter decidido. Por isso, no plano, nas tarefas e na execução, o revisor lê também o PDR e a spec, e acusa como bloqueante o que contraria a Decisão, o Escopo ou o Fora de escopo do PDR, ou uma premissa da tabela de Viabilidade verificada — a menos que o próprio artefato registre o desvio.
+
 ## Os portões
 
 Todo artefato carrega `Status` no topo, e é esse campo, não a memória da conversa, que a etapa seguinte lê. O PDR nasce `proposto` e a spec exige `aceito`; a spec nasce `rascunho` e o plano exige `aprovada`; e assim por diante.
